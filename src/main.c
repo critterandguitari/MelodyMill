@@ -91,8 +91,8 @@ int main(void)
 
 	    /* Update WWDG counter */
 	    //WWDG_SetCounter(127);
-		//pp6_set_aux_led(7);
-		pp6_set_mode_led(6);
+		pp6_set_aux_led(5);
+		pp6_set_seq_led(5);
 
 /*
 		if (!(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_6))) {

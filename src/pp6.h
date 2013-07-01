@@ -10,14 +10,12 @@
 
 #include "arm_math.h"
 
-#define MODE_LED_BLUE_ON GPIO_WriteBit(GPIOB, GPIO_Pin_9, 0)
-#define MODE_LED_RED_ON GPIO_WriteBit(GPIOE, GPIO_Pin_0, 0)
-//#define MODE_LED_RED_ON GPIO_WriteBit(GPIOC, GPIO_Pin_3, 0)   // Only for Rev A of circuit board
-#define MODE_LED_GREEN_ON GPIO_WriteBit(GPIOE, GPIO_Pin_1, 0)
-#define MODE_LED_BLUE_OFF GPIO_WriteBit(GPIOB, GPIO_Pin_9, 1)
-#define MODE_LED_RED_OFF GPIO_WriteBit(GPIOE, GPIO_Pin_0, 1)
-//#define MODE_LED_RED_OFF GPIO_WriteBit(GPIOC, GPIO_Pin_3, 1)   // Only for Rev A of circuit board
-#define MODE_LED_GREEN_OFF GPIO_WriteBit(GPIOE, GPIO_Pin_1, 1)
+#define SEQ_LED_BLUE_ON GPIO_WriteBit(GPIOB, GPIO_Pin_9, 0)
+#define SEQ_LED_RED_ON GPIO_WriteBit(GPIOE, GPIO_Pin_0, 0)
+#define SEQ_LED_GREEN_ON GPIO_WriteBit(GPIOE, GPIO_Pin_1, 0)
+#define SEQ_LED_BLUE_OFF GPIO_WriteBit(GPIOB, GPIO_Pin_9, 1)
+#define SEQ_LED_RED_OFF GPIO_WriteBit(GPIOE, GPIO_Pin_0, 1)
+#define SEQ_LED_GREEN_OFF GPIO_WriteBit(GPIOE, GPIO_Pin_1, 1)
 
 #define AUX_LED_BLUE_ON GPIO_WriteBit(GPIOB, GPIO_Pin_4, 0)
 #define AUX_LED_RED_ON GPIO_WriteBit(GPIOB, GPIO_Pin_5, 0)
@@ -77,10 +75,10 @@ typedef struct {
 	uint8_t aux_button_released;
 
 	// LEDs
-	uint8_t mode_led;
+	uint8_t seq_led;
 	uint8_t aux_led;
 	uint8_t aux_led_flash; 			// these count down to zero, then the flash is over
-	uint8_t mode_led_flash;
+	uint8_t seq_led_flash;
 
 	// MIDI clock
 	uint8_t midi_start_flag;        // midi start command
@@ -143,9 +141,9 @@ void pp6_smooth_knobs(void);
 
 
 
-uint8_t pp6_get_mode_led(void);
+uint8_t pp6_get_seq_led(void);
 uint8_t pp6_get_aux_led(void);
-void pp6_set_mode_led(uint8_t mode_led);
+void pp6_set_seq_led(uint8_t led);
 void pp6_set_aux_led(uint8_t bank_led);
 
 void pp6_flash_mode_led(uint8_t flash_time);

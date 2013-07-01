@@ -66,7 +66,7 @@ void pp6_init(void) {
 	pp6.midi_in_clock_last = 0;
 	pp6.midi_clock_tick_count = 0;
 
-	pp6.mode_led_flash = 0;
+	pp6.seq_led_flash = 0;
 	pp6.aux_led_flash = 0;
 
 	// init the note on arrays
@@ -188,12 +188,12 @@ void pp6_change_mode(void){
 	else {
 		if (pp6.mode == 6) pp6.mode = 0;
 	}
-		pp6_set_mode_led(pp6.mode + 1);
+		pp6_set_seq_led(pp6.mode + 1);
 }
 
 void pp6_set_mode(uint32_t mode){
 	pp6.mode = mode;
-	pp6_set_mode_led(pp6.mode + 1);
+	pp6_set_seq_led(pp6.mode + 1);
 }
 
 uint32_t pp6_get_mode(void){
@@ -201,22 +201,22 @@ uint32_t pp6_get_mode(void){
 }
 
 // MODE LED
-void pp6_set_mode_led(uint8_t led) {
-	pp6.mode_led = led;
-	if (!pp6.mode_led_flash) {
-		if (led == 0) {MODE_LED_RED_OFF;MODE_LED_GREEN_OFF;MODE_LED_BLUE_OFF;}
-		if (led == 1) {MODE_LED_RED_ON;MODE_LED_GREEN_OFF;MODE_LED_BLUE_OFF;}
-		if (led == 2) {MODE_LED_RED_ON;MODE_LED_GREEN_ON;MODE_LED_BLUE_OFF;}
-		if (led == 3) {MODE_LED_RED_OFF;MODE_LED_GREEN_ON;MODE_LED_BLUE_OFF;}
-		if (led == 4) {MODE_LED_RED_OFF;MODE_LED_GREEN_ON;MODE_LED_BLUE_ON;}
-		if (led == 5) {MODE_LED_RED_OFF;MODE_LED_GREEN_OFF;MODE_LED_BLUE_ON;}
-		if (led == 6) {MODE_LED_RED_ON;MODE_LED_GREEN_OFF;MODE_LED_BLUE_ON;}
-		if (led == 7) {MODE_LED_RED_ON;MODE_LED_GREEN_ON;MODE_LED_BLUE_ON;}
+void pp6_set_seq_led(uint8_t led) {
+	pp6.seq_led = led;
+	if (!pp6.seq_led_flash) {
+		if (led == 0) {SEQ_LED_RED_OFF;SEQ_LED_GREEN_OFF;SEQ_LED_BLUE_OFF;}
+		if (led == 1) {SEQ_LED_RED_ON;SEQ_LED_GREEN_OFF;SEQ_LED_BLUE_OFF;}
+		if (led == 2) {SEQ_LED_RED_ON;SEQ_LED_GREEN_ON;SEQ_LED_BLUE_OFF;}
+		if (led == 3) {SEQ_LED_RED_OFF;SEQ_LED_GREEN_ON;SEQ_LED_BLUE_OFF;}
+		if (led == 4) {SEQ_LED_RED_OFF;SEQ_LED_GREEN_ON;SEQ_LED_BLUE_ON;}
+		if (led == 5) {SEQ_LED_RED_OFF;SEQ_LED_GREEN_OFF;SEQ_LED_BLUE_ON;}
+		if (led == 6) {SEQ_LED_RED_ON;SEQ_LED_GREEN_OFF;SEQ_LED_BLUE_ON;}
+		if (led == 7) {SEQ_LED_RED_ON;SEQ_LED_GREEN_ON;SEQ_LED_BLUE_ON;}
 	}
 }
 
-uint8_t pp6_get_mode_led(void){
-	return pp6.mode_led;
+uint8_t pp6_get_seq_led(void){
+	return pp6.seq_led;
 }
 
 
@@ -239,9 +239,11 @@ uint8_t pp6_get_aux_led(void) {
 	return pp6.aux_led;
 }
 
+
+
 // LED flashing
 void pp6_flash_mode_led(uint8_t flash_time) {
-	pp6.mode_led_flash = flash_time;
+	pp6.seq_led_flash = flash_time;
 }
 
 void pp6_flash_aux_led(uint8_t flash_time) {
@@ -258,11 +260,11 @@ void pp6_flash_update(void) {
 		}
 	}
 
-	if (pp6.mode_led_flash) {
-		MODE_LED_RED_ON;MODE_LED_GREEN_ON;MODE_LED_BLUE_ON;
-		pp6.mode_led_flash--;
-		if (pp6.mode_led_flash == 0) {
-			pp6_set_mode_led(pp6.mode_led);
+	if (pp6.seq_led_flash) {
+		SEQ_LED_RED_ON;SEQ_LED_GREEN_ON;SEQ_LED_BLUE_ON;
+		pp6.seq_led_flash--;
+		if (pp6.seq_led_flash == 0) {
+			pp6_set_seq_led(pp6.seq_led);
 		}
 	}
 }
