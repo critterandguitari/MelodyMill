@@ -130,6 +130,21 @@ int main(void)
 				pp6_change_mode();
 			}
 
+
+			// trig, gate, clkin test
+			if (pp6_get_num_keys_down()) {
+				pp6_set_trig(1);
+			}
+			else {
+				pp6_set_trig(0);
+			}
+
+			if (pp6_get_clkin())
+				pp6_set_gate(1);
+			else
+				pp6_set_gate(0);
+
+
 			// maintain LED flasher
 			pp6_flash_update();
 

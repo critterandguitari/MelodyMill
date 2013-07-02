@@ -101,6 +101,9 @@ typedef struct {
 
 void pp6_init(void);
 
+void pp6_set_trig(uint32_t stat);
+void pp6_set_gate(uint32_t stat);
+uint32_t pp6_get_clkin(void);
 
 void pp6_enable_secret_mode(void);
 

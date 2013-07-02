@@ -76,10 +76,29 @@ void pp6_init(void) {
 	}
 }
 
+
+void pp6_set_trig(uint32_t stat){
+	if (stat)
+		GPIO_WriteBit(GPIOD, GPIO_Pin_3, 1);
+	else
+		GPIO_WriteBit(GPIOD, GPIO_Pin_3, 0);
+}
+
+void pp6_set_gate(uint32_t stat){
+	if (stat)
+		GPIO_WriteBit(GPIOD, GPIO_Pin_4, 1);
+	else
+		GPIO_WriteBit(GPIOD, GPIO_Pin_4, 0);
+}
+
+uint32_t pp6_get_clkin(void){
+	if (!(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_6))) return 0;
+	else return 1;
+}
+
 void pp6_enable_secret_mode(void) {
 	pp6.secret_mode_enabled = 1;
 }
-
 
 /// MIDI clock stuff
 void pp6_midi_clock_tick(void) {
@@ -263,8 +282,6 @@ void pp6_set_clk_led(uint8_t led) {
 uint8_t pp6_get_clk_led(void) {
 	return pp6.clk_led;
 }
-
-
 
 // LED flashing
 void pp6_flash_seq_led(uint8_t flash_time) {
