@@ -43,7 +43,14 @@ static void flash_led_record_enable(void);
 static uint32_t led_counter = 0;  // for the above flash function
 static uint8_t aux_led_color = BLACK;
 
+// pocket piano object  TODO:  the whole point is  this should not be here as extern ?  use getters setters
 extern pocket_piano pp6;
+
+// MIDI buffer
+uint8_t  uart_recv_buf[32];
+uint8_t  uart_recv_buf_write = 0;
+uint8_t  uart_recv_buf_read = 0;
+uint8_t tmp8;
 
 
 int main(void)
@@ -94,19 +101,20 @@ int main(void)
 	    /* Update WWDG counter */
 	    //WWDG_SetCounter(127);
 
-/*
-		if (!(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_6))) {
-			pp6_set_aux_led(7);
-			GPIO_WriteBit(GPIOD, GPIO_Pin_3, 1);
-			GPIO_WriteBit(GPIOD, GPIO_Pin_4, 0);
-		}
-		else {
-			pp6_set_aux_led(0);
-			GPIO_WriteBit(GPIOD, GPIO_Pin_3, 0);
-			GPIO_WriteBit(GPIOD, GPIO_Pin_4, 1);
-		}
+		// check for new midi
+	    // buffer midi reception
+	    if (!(USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET)){
+	    	uart_recv_buf[uart_recv_buf_write] = USART_ReceiveData(USART1);
 
-*/
+	    	// if its a sync, send it thru immediately  to avoid jitter
+	    	if (uart_recv_buf[uart_recv_buf_write] == STATUS_SYNC) {
+		    	sendSync();
+	    	}
+
+	        uart_recv_buf_write++;
+	        uart_recv_buf_write &= 0x1f;  // 32 bytes
+	    }
+
         // empty the tx buffer
         uart_service_tx_buf();
 
@@ -118,10 +126,18 @@ int main(void)
 			// make sure this only happens once every 64 sample periods
 			sample_clock_last = sample_clock;
 
+	        // process MIDI, pp6 will be updated from midi.c handlers if there are any relevant midi events
+	        if (uart_recv_buf_read != uart_recv_buf_write){
+	            tmp8 = uart_recv_buf[uart_recv_buf_read];
+	            uart_recv_buf_read++;
+	            uart_recv_buf_read &= 0x1f;
+	            recvByte(tmp8);
+	        }
+
+
 	        // update keys knobs
 			pp6_keys_update();
 			pp6_knobs_update();
-
 
 			// check for new key events
 			pp6_get_key_events();
@@ -129,7 +145,6 @@ int main(void)
 			if (pp6_mode_button_pressed()){
 				pp6_change_mode();
 			}
-
 
 			// trig, gate, clkin test
 			if (pp6_get_num_keys_down()) {
@@ -148,10 +163,40 @@ int main(void)
 			// maintain LED flasher
 			pp6_flash_update();
 
-			//t2 = timer_get_time();
-			//t = t2 - t1;
 
-			for (i = 0; i< 16; i++) {
+		// SEQUENCER GOES HERE
+		//
+
+
+			// check for events, and send midi and play synth
+			// TODO :  don't sent midi from here, send it from the arps
+			for (i = 0; i < 128; i++) {
+				if (pp6_get_note_state(i) != pp6_get_note_state_last(i)) {
+					if (pp6_get_note_state(i)) {
+						sendNoteOn(1, i, 100);
+						pp6_set_synth_note_start();
+						pp6_set_synth_note(i);
+					}
+					else {
+						sendNoteOff(1, i, 0);
+						if (i ==  pp6_get_synth_note()) pp6_set_synth_note_stop();  // if it equals the currently playing note, shut it off
+					}
+				}
+			}
+			pp6_set_current_note_state_to_last();
+
+			// if we got a note
+			if (pp6_get_synth_note_start()){
+
+				pwm_set( (c_to_f_ratio((float32_t)pp6_get_synth_note() * 100) * 100 ) * (pp6_get_knob_4() * 2 + 1));
+
+			}
+			if (pp6_get_synth_note_stop()){
+
+
+			}
+
+		/*	for (i = 0; i< 16; i++) {
 				if (! ((pp6_get_keys() >> i) & 1) ) {
 					v = (i * (1.f / 12.f)) + 2.f;
 
@@ -174,12 +219,12 @@ int main(void)
 				pp6_set_clk_led(c);
 
 
-			}
+			}*/
 
 
-
-			if ( (!(( pp6_get_keys() >>16) & 1)) )
-				v = v + 1.f;
+			// test vout
+			//if ( (!(( pp6_get_keys() >>16) & 1)) )
+			//	v = v + 1.f;
 
 
 			// clear all the events

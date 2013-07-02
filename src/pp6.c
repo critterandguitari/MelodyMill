@@ -363,6 +363,7 @@ void pp6_get_key_events(void) {
 }
 
 // the note interface for the piano
+// TODO :  WHAT THE HELL ARE ALL THESE ?????  CLEAN IT UP
 // TODO :  ahhh, what if more then one key is pressed at same time ??, set_note_on can only handle 1 note per 'tick'
 uint8_t pp6_note_on_flag() {
 	return pp6.note_on_flag;
@@ -402,7 +403,7 @@ void pp6_turn_off_all_on_notes(void) {
 	}
 }
 
-// The actual synth voice
+// The actual mono synth voice
 void pp6_set_synth_note(uint8_t note) {
 	pp6.synth_note = note;
 }
