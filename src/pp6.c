@@ -22,7 +22,7 @@ pocket_piano pp6;
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 
-/* You can monitor the converted value by adding the variable "ADC3ConvertedValue"
+/* You can monitor the converted value by adding the variable "ADC1ConvertedValue"
    to the debugger watch window */
 
 
@@ -46,7 +46,7 @@ void pp6_init(void) {
 	pp6_knobs_init();
 	pp6_init_digi_in();
 
-	pp6_set_aux_led(BLACK);
+	pp6_set_mode_led(BLACK);
 
 	pp6_set_mode(0);
 
@@ -67,7 +67,7 @@ void pp6_init(void) {
 	pp6.midi_clock_tick_count = 0;
 
 	pp6.seq_led_flash = 0;
-	pp6.aux_led_flash = 0;
+	pp6.mode_led_flash = 0;
 
 	// init the note on arrays
 	for (i = 0; i < 128; i++) {
@@ -130,6 +130,12 @@ float32_t pp6_get_knob_2(void){
 }
 float32_t pp6_get_knob_3(void){
 	return pp6.knob[2];
+}
+float32_t pp6_get_knob_4(void){
+	return pp6.knob[3];
+}
+float32_t pp6_get_knob_5(void){
+	return pp6.knob[4];
 }
 
 void pp6_set_knob_1(float32_t v){
@@ -200,7 +206,7 @@ uint32_t pp6_get_mode(void){
 	return pp6.mode;
 }
 
-// MODE LED
+// seq LED
 void pp6_set_seq_led(uint8_t led) {
 	pp6.seq_led = led;
 	if (!pp6.seq_led_flash) {
@@ -220,43 +226,62 @@ uint8_t pp6_get_seq_led(void){
 }
 
 
-// AUX LED
-void pp6_set_aux_led(uint8_t led) {
-	pp6.aux_led = led;
-	if (!pp6.aux_led_flash) {
-		if (led == 0) {AUX_LED_RED_OFF;AUX_LED_GREEN_OFF;AUX_LED_BLUE_OFF;}
-		if (led == 1) {AUX_LED_RED_ON;AUX_LED_GREEN_OFF;AUX_LED_BLUE_OFF;}
-		if (led == 2) {AUX_LED_RED_ON;AUX_LED_GREEN_ON;AUX_LED_BLUE_OFF;}
-		if (led == 3) {AUX_LED_RED_OFF;AUX_LED_GREEN_ON;AUX_LED_BLUE_OFF;}
-		if (led == 4) {AUX_LED_RED_OFF;AUX_LED_GREEN_ON;AUX_LED_BLUE_ON;}
-		if (led == 5) {AUX_LED_RED_OFF;AUX_LED_GREEN_OFF;AUX_LED_BLUE_ON;}
-		if (led == 6) {AUX_LED_RED_ON;AUX_LED_GREEN_OFF;AUX_LED_BLUE_ON;}
-		if (led == 7) {AUX_LED_RED_ON;AUX_LED_GREEN_ON;AUX_LED_BLUE_ON;}
+// mode LED
+void pp6_set_mode_led(uint8_t led) {
+	pp6.mode_led = led;
+	if (!pp6.mode_led_flash) {
+		if (led == 0) {MODE_LED_RED_OFF;MODE_LED_GREEN_OFF;MODE_LED_BLUE_OFF;}
+		if (led == 1) {MODE_LED_RED_ON;MODE_LED_GREEN_OFF;MODE_LED_BLUE_OFF;}
+		if (led == 2) {MODE_LED_RED_ON;MODE_LED_GREEN_ON;MODE_LED_BLUE_OFF;}
+		if (led == 3) {MODE_LED_RED_OFF;MODE_LED_GREEN_ON;MODE_LED_BLUE_OFF;}
+		if (led == 4) {MODE_LED_RED_OFF;MODE_LED_GREEN_ON;MODE_LED_BLUE_ON;}
+		if (led == 5) {MODE_LED_RED_OFF;MODE_LED_GREEN_OFF;MODE_LED_BLUE_ON;}
+		if (led == 6) {MODE_LED_RED_ON;MODE_LED_GREEN_OFF;MODE_LED_BLUE_ON;}
+		if (led == 7) {MODE_LED_RED_ON;MODE_LED_GREEN_ON;MODE_LED_BLUE_ON;}
 	}
 }
 
-uint8_t pp6_get_aux_led(void) {
-	return pp6.aux_led;
+uint8_t pp6_get_mode_led(void) {
+	return pp6.mode_led;
+}
+
+// clk LED
+void pp6_set_clk_led(uint8_t led) {
+	pp6.clk_led = led;
+	//if (!pp6.clk_led_flash) {
+		if (led == 0) {CLK_LED_RED_OFF;CLK_LED_GREEN_OFF;CLK_LED_BLUE_OFF;}
+		if (led == 1) {CLK_LED_RED_ON;CLK_LED_GREEN_OFF;CLK_LED_BLUE_OFF;}
+		if (led == 2) {CLK_LED_RED_ON;CLK_LED_GREEN_ON;CLK_LED_BLUE_OFF;}
+		if (led == 3) {CLK_LED_RED_OFF;CLK_LED_GREEN_ON;CLK_LED_BLUE_OFF;}
+		if (led == 4) {CLK_LED_RED_OFF;CLK_LED_GREEN_ON;CLK_LED_BLUE_ON;}
+		if (led == 5) {CLK_LED_RED_OFF;CLK_LED_GREEN_OFF;CLK_LED_BLUE_ON;}
+		if (led == 6) {CLK_LED_RED_ON;CLK_LED_GREEN_OFF;CLK_LED_BLUE_ON;}
+		if (led == 7) {CLK_LED_RED_ON;CLK_LED_GREEN_ON;CLK_LED_BLUE_ON;}
+	//}
+}
+
+uint8_t pp6_get_clk_led(void) {
+	return pp6.clk_led;
 }
 
 
 
 // LED flashing
-void pp6_flash_mode_led(uint8_t flash_time) {
+void pp6_flash_seq_led(uint8_t flash_time) {
 	pp6.seq_led_flash = flash_time;
 }
 
-void pp6_flash_aux_led(uint8_t flash_time) {
-	pp6.aux_led_flash = flash_time;
+void pp6_flash_mode_led(uint8_t flash_time) {
+	pp6.mode_led_flash = flash_time;
 }
 
 void pp6_flash_update(void) {
 
-	if (pp6.aux_led_flash) {
-		AUX_LED_RED_ON;AUX_LED_GREEN_ON;AUX_LED_BLUE_ON;
-		pp6.aux_led_flash--;
-		if (pp6.aux_led_flash == 0) {
-			pp6_set_aux_led(pp6.aux_led);
+	if (pp6.mode_led_flash) {
+		MODE_LED_RED_ON;MODE_LED_GREEN_ON;MODE_LED_BLUE_ON;
+		pp6.mode_led_flash--;
+		if (pp6.mode_led_flash == 0) {
+			pp6_set_mode_led(pp6.mode_led);
 		}
 	}
 
@@ -433,7 +458,7 @@ uint8_t pp6_get_physical_notes_on(void){
 }
 
 /**
-  * @brief  ADC3 channel12 with DMA configuration
+  * @brief  ADC1 channel12 with DMA configuration
   * @param  None
   * @retval None
   */
@@ -443,64 +468,113 @@ void pp6_knobs_init(void)
 	ADC_CommonInitTypeDef ADC_CommonInitStructure;
 	GPIO_InitTypeDef      GPIO_InitStructure;
 
-	/* Enable ADC3 GPIO clocks ****************************************/
+	/* Enable ADC1 GPIO clocks ****************************************/
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC3, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1ENR_GPIOCEN,ENABLE);//Clock for the ADC port!! Do not forget about this one ;)
 
-	/* Configure ADC3 Channel12, 11, 10 pin as analog input ******************************/
+
+	/* Configure ADC1 Channel12, 11, 10, 9, 8 pin as analog input ******************************/
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2 | GPIO_Pin_1 | GPIO_Pin_0;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL ;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
+	// adc 9, 8 on pb0, pb1
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_0;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+
+	//ADC_DeInit();
 	/* ADC Common Init **********************************************************/
 	ADC_CommonInitStructure.ADC_Mode = ADC_Mode_Independent;
-	ADC_CommonInitStructure.ADC_Prescaler = ADC_Prescaler_Div2;
+	ADC_CommonInitStructure.ADC_Prescaler = ADC_Prescaler_Div6;
 	ADC_CommonInitStructure.ADC_DMAAccessMode = ADC_DMAAccessMode_Disabled;
 	ADC_CommonInitStructure.ADC_TwoSamplingDelay = ADC_TwoSamplingDelay_5Cycles;
 	ADC_CommonInit(&ADC_CommonInitStructure);
 
-	/* ADC3 Init ****************************************************************/
+	/* ADC1 Init ****************************************************************/
 	ADC_InitStructure.ADC_Resolution = ADC_Resolution_12b;
 	ADC_InitStructure.ADC_ScanConvMode = DISABLE;
 	ADC_InitStructure.ADC_ContinuousConvMode = DISABLE;
+	ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T1_CC1;// conversion is synchronous with TIM1 and CC1 (actually I'm not sure about this one :/)
 	ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
 	ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
 	ADC_InitStructure.ADC_NbrOfConversion = 1;
-	ADC_Init(ADC3, &ADC_InitStructure);
+	ADC_Init(ADC1, &ADC_InitStructure);
 
-	/* ADC3 regular configuration *************************************/
-	ADC_RegularChannelConfig(ADC3, ADC_Channel_12, 1, ADC_SampleTime_15Cycles);
+	/* ADC1 regular configuration *************************************/
+	ADC_RegularChannelConfig(ADC1, ADC_Channel_11, 1, ADC_SampleTime_144Cycles);
 
-	/* Enable ADC3 */
-	ADC_Cmd(ADC3, ENABLE);
-	ADC_SoftwareStartConv(ADC3);
+	/* Enable ADC1 */
+	ADC_Cmd(ADC1, ENABLE);
+	ADC_SoftwareStartConv(ADC1);
+
+
+/*
+	 ADC_InitTypeDef ADC_init_structure; //Structure for adc confguration
+	 GPIO_InitTypeDef GPIO_initStructre; //Structure for analog input pin
+	 //Clock configuration
+	 RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1,ENABLE);//The ADC1 is connected the APB2 peripheral bus thus we will use its clock source
+	 RCC_AHB1PeriphClockCmd(RCC_AHB1ENR_GPIOCEN,ENABLE);//Clock for the ADC port!! Do not forget about this one ;)
+	 //Analog pin configuration
+	 GPIO_initStructre.GPIO_Pin = GPIO_Pin_0;//The channel 10 is connected to PC0
+	 GPIO_initStructre.GPIO_Mode = GPIO_Mode_AN; //The PC0 pin is configured in analog mode
+	 GPIO_initStructre.GPIO_PuPd = GPIO_PuPd_NOPULL; //We don't need any pull up or pull down
+	 GPIO_Init(GPIOC,&GPIO_initStructre);
+
+	 //ADC structure configuration
+	 ADC_DeInit();
+	 ADC_init_structure.ADC_DataAlign = ADC_DataAlign_Right;//data converted will be shifted to right
+	 ADC_init_structure.ADC_Resolution = ADC_Resolution_12b;//Input voltage is converted into a 12bit number giving a maximum value of 4096
+	 ADC_init_structure.ADC_ContinuousConvMode = DISABLE; //the conversion is continuous, the input data is converted more than once
+	 ADC_init_structure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T1_CC1;// conversion is synchronous with TIM1 and CC1 (actually I'm not sure about this one :/)
+	 ADC_init_structure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;//no trigger for conversion
+	 ADC_init_structure.ADC_NbrOfConversion = 1;//I think this one is clear :p
+	 ADC_init_structure.ADC_ScanConvMode = DISABLE;//The scan is configured in one channel
+	 ADC_Init(ADC1,&ADC_init_structure);
+	 //Enable ADC conversion
+	 ADC_Cmd(ADC1,ENABLE);
+	 //Select the channel to be read from
+	 ADC_RegularChannelConfig(ADC1,ADC_Channel_10,1,ADC_SampleTime_144Cycles);
+
+	 ADC_SoftwareStartConv(ADC1);//Start the conversion
+	// while(!ADC_GetFlagStatus(ADC1, ADC_FLAG_EOC));//Processing the conversion
+*/
+
+
 }
 
 void pp6_knobs_update(void) {
 	static uint8_t channel = 0;
-	static uint32_t knobs[3];
+	static uint32_t knobs[5];
 
-	knobs[channel] = ADC_GetConversionValue(ADC3);
+	knobs[channel] = ADC_GetConversionValue(ADC1);
+
 
 	/// ahhh so it was 65536 ,, then it started needing 4096 (the expected value) ??
-	pp6.knob[0] = knobs[0] / 65536.f;
-	pp6.knob[1] = knobs[1] / 65536.f;
-	pp6.knob[2] = knobs[2] / 65536.f;
+	//pp6.knob[0] = knobs[0] / 65536.f;
+	//pp6.knob[1] = knobs[1] / 65536.f;
+	//pp6.knob[2] = knobs[2] / 65536.f;
 
-	/*pp6.knob[0] = knobs[0] / 4096.f;
+	pp6.knob[0] = knobs[0] / 4096.f;
 	pp6.knob[1] = knobs[1] / 4096.f;
-	pp6.knob[2] = knobs[2] / 4096.f;*/
+	pp6.knob[2] = knobs[2] / 4096.f;
+	pp6.knob[3] = knobs[3] / 4096.f;
+	pp6.knob[4] = knobs[4] / 4096.f;
 
 
 	channel++;
-	if (channel > 2) channel = 0;
+	if (channel > 4) channel = 0;
 
-	if (channel == 0) ADC_RegularChannelConfig(ADC3, ADC_Channel_12, 1, ADC_SampleTime_15Cycles);
-	if (channel == 1) ADC_RegularChannelConfig(ADC3, ADC_Channel_11, 1, ADC_SampleTime_15Cycles);
-	if (channel == 2) ADC_RegularChannelConfig(ADC3, ADC_Channel_10, 1, ADC_SampleTime_15Cycles);
+	if (channel == 0) ADC_RegularChannelConfig(ADC1, ADC_Channel_12, 1, ADC_SampleTime_144Cycles);
+	if (channel == 1) ADC_RegularChannelConfig(ADC1, ADC_Channel_11, 1, ADC_SampleTime_144Cycles);
+	if (channel == 2) ADC_RegularChannelConfig(ADC1, ADC_Channel_10, 1, ADC_SampleTime_144Cycles);
+	if (channel == 3) ADC_RegularChannelConfig(ADC1, ADC_Channel_9, 1, ADC_SampleTime_144Cycles);
+	if (channel == 4) ADC_RegularChannelConfig(ADC1, ADC_Channel_8, 1, ADC_SampleTime_144Cycles);
 
-	ADC_SoftwareStartConv(ADC3);
+	ADC_SoftwareStartConv(ADC1);
 }
 
 

@@ -80,19 +80,19 @@ int main(void)
 	uint16_t s;
 
 	v = 0;
-	uint8_t k;
+	uint8_t k, c;
 
 	pwm_init();
 	pwm_set(100);
 //	pwm_test();
 	midi_init(1);
+
+	//pp6_knobs_init();
 	// go!
 	while (1)	{
 
 	    /* Update WWDG counter */
 	    //WWDG_SetCounter(127);
-		pp6_set_aux_led(5);
-		pp6_set_seq_led(5);
 
 /*
 		if (!(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_6))) {
@@ -122,6 +122,7 @@ int main(void)
 			pp6_keys_update();
 			pp6_knobs_update();
 
+
 			// check for new key events
 			pp6_get_key_events();
 
@@ -139,7 +140,7 @@ int main(void)
 				if (! ((pp6_get_keys() >> i) & 1) ) {
 					v = (i * (1.f / 12.f)) + 2.f;
 
-					pwm_set( c_to_f_ratio(i * 100) * 100 );
+					pwm_set( (c_to_f_ratio(i * 100) * 100 ) * (pp6_get_knob_4() * 2 + 1));
 
 					break;
 				}
@@ -150,16 +151,20 @@ int main(void)
 			if (k == 0) sendNoteOff(1, i+ 60, 0);
 			if (k == 128) sendNoteOn(1, i + 60, 110);
 
+			if (!k){
+				c++;
+				c &= 0x7;
+				pp6_set_mode_led(c);
+				pp6_set_seq_led(c);
+				pp6_set_clk_led(c);
+
+
+			}
+
 
 
 			if ( (!(( pp6_get_keys() >>16) & 1)) )
 				v = v + 1.f;
-
-
-			if (pp6_get_num_keys_down())
-				GPIO_WriteBit(GPIOD, GPIO_Pin_3, 1);
-			else
-				GPIO_WriteBit(GPIOD, GPIO_Pin_3, 0);
 
 
 			// clear all the events
@@ -209,11 +214,11 @@ int main(void)
 void flash_led_record_enable() {
 	if (led_counter > 150){
 		led_counter = 0;
-		if (pp6_get_aux_led()){
-			pp6_set_aux_led(0);
+		if (pp6_get_mode_led()){
+			pp6_set_mode_led(0);
 		}
 		else {
-			pp6_set_aux_led(1);
+			pp6_set_mode_led(1);
 		}
 	}
 }

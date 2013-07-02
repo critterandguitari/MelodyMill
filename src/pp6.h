@@ -17,12 +17,19 @@
 #define SEQ_LED_RED_OFF GPIO_WriteBit(GPIOE, GPIO_Pin_0, 1)
 #define SEQ_LED_GREEN_OFF GPIO_WriteBit(GPIOE, GPIO_Pin_1, 1)
 
-#define AUX_LED_BLUE_ON GPIO_WriteBit(GPIOB, GPIO_Pin_4, 0)
-#define AUX_LED_RED_ON GPIO_WriteBit(GPIOB, GPIO_Pin_5, 0)
-#define AUX_LED_GREEN_ON GPIO_WriteBit(GPIOB, GPIO_Pin_8, 0)
-#define AUX_LED_BLUE_OFF GPIO_WriteBit(GPIOB, GPIO_Pin_4, 1)
-#define AUX_LED_RED_OFF GPIO_WriteBit(GPIOB, GPIO_Pin_5, 1)
-#define AUX_LED_GREEN_OFF GPIO_WriteBit(GPIOB, GPIO_Pin_8, 1)
+#define MODE_LED_BLUE_ON GPIO_WriteBit(GPIOB, GPIO_Pin_4, 0)
+#define MODE_LED_RED_ON GPIO_WriteBit(GPIOB, GPIO_Pin_5, 0)
+#define MODE_LED_GREEN_ON GPIO_WriteBit(GPIOB, GPIO_Pin_8, 0)
+#define MODE_LED_BLUE_OFF GPIO_WriteBit(GPIOB, GPIO_Pin_4, 1)
+#define MODE_LED_RED_OFF GPIO_WriteBit(GPIOB, GPIO_Pin_5, 1)
+#define MODE_LED_GREEN_OFF GPIO_WriteBit(GPIOB, GPIO_Pin_8, 1)
+
+#define CLK_LED_BLUE_ON GPIO_WriteBit(GPIOA, GPIO_Pin_7, 0)
+#define CLK_LED_RED_ON GPIO_WriteBit(GPIOC, GPIO_Pin_4, 0)
+#define CLK_LED_GREEN_ON GPIO_WriteBit(GPIOC, GPIO_Pin_5, 0)
+#define CLK_LED_BLUE_OFF GPIO_WriteBit(GPIOA, GPIO_Pin_7, 1)
+#define CLK_LED_RED_OFF GPIO_WriteBit(GPIOC, GPIO_Pin_4, 1)
+#define CLK_LED_GREEN_OFF GPIO_WriteBit(GPIOC, GPIO_Pin_5, 1)
 
 #define BLACK 0
 #define RED 1
@@ -38,8 +45,8 @@
 typedef struct {
 
 	// knobs
-	uint8_t knob_touched[3]; 	// flag to see if knob is touched
-	float32_t knob[3];   		// stores knob values 0-1
+	uint8_t knob_touched[5]; 	// flag to see if knob is touched
+	float32_t knob[5];   		// stores knob values 0-1
 
 	// secret mode
 	uint8_t secret_mode_enabled;
@@ -76,8 +83,9 @@ typedef struct {
 
 	// LEDs
 	uint8_t seq_led;
-	uint8_t aux_led;
-	uint8_t aux_led_flash; 			// these count down to zero, then the flash is over
+	uint8_t mode_led;
+	uint8_t clk_led;
+	uint8_t mode_led_flash; 			// these count down to zero, then the flash is over
 	uint8_t seq_led_flash;
 
 	// MIDI clock
@@ -99,6 +107,8 @@ void pp6_enable_secret_mode(void);
 float32_t pp6_get_knob_1(void);
 float32_t pp6_get_knob_2(void);
 float32_t pp6_get_knob_3(void);
+float32_t pp6_get_knob_4(void);
+float32_t pp6_get_knob_5(void);
 void pp6_set_knob_1(float32_t v);
 void pp6_set_knob_2(float32_t v);
 void pp6_set_knob_3(float32_t v);
@@ -142,12 +152,14 @@ void pp6_smooth_knobs(void);
 
 
 uint8_t pp6_get_seq_led(void);
-uint8_t pp6_get_aux_led(void);
+uint8_t pp6_get_mode_led(void);
 void pp6_set_seq_led(uint8_t led);
-void pp6_set_aux_led(uint8_t bank_led);
+void pp6_set_mode_led(uint8_t bank_led);
+void pp6_set_clk_led(uint8_t led) ;
+uint8_t pp6_get_clk_led(void);
 
 void pp6_flash_mode_led(uint8_t flash_time);
-void pp6_flash_aux_led(uint8_t flash_time);
+void pp6_flash_mode_led(uint8_t flash_time);
 void pp6_flash_update(void);
 
 void  pp6_set_mode_button_pressed(void);

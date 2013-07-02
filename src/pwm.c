@@ -89,8 +89,18 @@ void pwm_set(float32_t f) {
     /* Compute the CCR1 value to generate a PWN signal with 50% duty cycle */
     pulse = period / 2;
 
+
+
+
+
     TIM1->ARR = period;
     TIM1->CCR1 = pulse;
+
+    // for jumping to shorter periods, timer count could end up running away
+    if (TIM1->CNT >= period)
+    	TIM1->CNT = 0;
+
+
 
 }
 
