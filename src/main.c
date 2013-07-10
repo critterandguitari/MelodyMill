@@ -26,6 +26,7 @@
 #include "audio.h"
 #include "pwm.h"
 #include "midi.h"
+#include "notelist.h"
 
 // from the DAC driver CS4344.c
 extern unsigned int software_index;
@@ -52,11 +53,15 @@ uint8_t  uart_recv_buf_write = 0;
 uint8_t  uart_recv_buf_read = 0;
 uint8_t tmp8;
 
+note_list nl;
 
 int main(void)
 {
 	uint8_t i;
 
+	uint32_t period = 0;
+	uint32_t count = 0;
+	uint8_t current_note = 0;
 
 	Delay(20000);
 	 // enable random number generator
@@ -93,6 +98,8 @@ int main(void)
 	pwm_set(100);
 //	pwm_test();
 	midi_init(1);
+
+	note_list_init(&nl);
 
 	//pp6_knobs_init();
 	// go!
@@ -134,7 +141,6 @@ int main(void)
 	            recvByte(tmp8);
 	        }
 
-
 	        // update keys knobs
 			pp6_keys_update();
 			pp6_knobs_update();
@@ -147,7 +153,7 @@ int main(void)
 			}
 
 			// trig, gate, clkin test
-			if (pp6_get_num_keys_down()) {
+			/*if (pp6_get_num_keys_down()) {
 				pp6_set_trig(1);
 			}
 			else {
@@ -157,7 +163,7 @@ int main(void)
 			if (pp6_get_clkin())
 				pp6_set_gate(1);
 			else
-				pp6_set_gate(0);
+				pp6_set_gate(0);*/
 
 
 			// maintain LED flasher
@@ -174,27 +180,62 @@ int main(void)
 				if (pp6_get_note_state(i) != pp6_get_note_state_last(i)) {
 					if (pp6_get_note_state(i)) {
 						sendNoteOn(1, i, 100);
+						note_list_note_on(&nl, i);
 						pp6_set_synth_note_start();
 						pp6_set_synth_note(i);
 					}
 					else {
 						sendNoteOff(1, i, 0);
+						note_list_note_off(&nl, i);
 						if (i ==  pp6_get_synth_note()) pp6_set_synth_note_stop();  // if it equals the currently playing note, shut it off
 					}
 				}
 			}
 			pp6_set_current_note_state_to_last();
 
-			// if we got a note
-			if (pp6_get_synth_note_start()){
+			// simple arp
+			count++;
+			period = pp6_get_knob_3() * 1000;
+			if (count > period) {
+				count = 0;
+				nl.index++;
+				if (nl.index >= nl.len){
+					nl.index=0;
+				}
 
-				pwm_set( (c_to_f_ratio((float32_t)pp6_get_synth_note() * 100) * 100 ) * (pp6_get_knob_4() * 2 + 1));
+
+			//	pwm_set( (c_to_f_ratio((float32_t)nl.note_list[nl.index] * 100) * 50 ) * (pp6_get_knob_4() * 2 + 1));
+
+				pp6_set_mode_led(nl.index & 0x7);
+			}
+
+
+
+			// single shot
+			if (note_list_most_recent(&nl) != current_note){
+				current_note = note_list_most_recent(&nl);
+				pwm_set( (c_to_f_ratio((float32_t)current_note * 100) * 50 ) * (pp6_get_knob_4() * 2 + 1));
+			}
+
+
+			//pp6_set_mode_led(c);
+
+			// if we got a note
+			/*if (pp6_get_synth_note_start()){
+
+				pwm_set( (c_to_f_ratio((float32_t)pp6_get_synth_note() * 100) * 50 ) * (pp6_get_knob_4() * 2 + 1));
+				pp6_set_gate(1);
 
 			}
 			if (pp6_get_synth_note_stop()){
 
+				pp6_set_gate(0);
+			}*/
 
-			}
+
+
+
+
 
 		/*	for (i = 0; i< 16; i++) {
 				if (! ((pp6_get_keys() >> i) & 1) ) {

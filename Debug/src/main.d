@@ -37,7 +37,7 @@ src/main.d: ../src/main.c \
  /home/owen/workspace-rs5/CMSISv2p10_STM32F4xx/inc/core_cm4.h \
  ../src/CS4344.h ../src/pp6.h ../src/miditof.h ../src/uart.h \
  ../src/timer.h ../src/sequencer.h ../src/audio.h ../src/pwm.h \
- ../src/midi.h
+ ../src/midi.h ../src/notelist.h
 
 /home/owen/workspace-rs5/CMSISv2p10_STM32F4xx/inc/stm32f4xx.h:
 
@@ -128,3 +128,5 @@ src/main.d: ../src/main.c \
 ../src/pwm.h:
 
 ../src/midi.h:
+
+../src/notelist.h:

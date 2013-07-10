@@ -9,6 +9,7 @@ C_SRCS += \
 ../src/cr_startup_stm32f4xx.c \
 ../src/main.c \
 ../src/midi.c \
+../src/notelist.c \
 ../src/oscillator.c \
 ../src/pp6.c \
 ../src/pwm.c \
@@ -25,6 +26,7 @@ OBJS += \
 ./src/cr_startup_stm32f4xx.o \
 ./src/main.o \
 ./src/midi.o \
+./src/notelist.o \
 ./src/oscillator.o \
 ./src/pp6.o \
 ./src/pwm.o \
@@ -41,6 +43,7 @@ C_DEPS += \
 ./src/cr_startup_stm32f4xx.d \
 ./src/main.d \
 ./src/midi.d \
+./src/notelist.d \
 ./src/oscillator.d \
 ./src/pp6.d \
 ./src/pwm.d \
