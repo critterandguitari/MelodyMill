@@ -34,6 +34,41 @@ note_list * note_list_copy_notes(note_list * src, note_list * dest) {
 
 }
 
+// copies list n times, n octaves higher each
+note_list * note_list_octaves_up(note_list * notes, uint8_t height) {
+
+	int i,j,l  = 0;
+
+	l = notes->len;
+	notes->len = 0;
+	for (i =0; i < height; i++){
+		for (j = 0; j < l; j++) {
+			notes->note_list[j + (l * i)] = notes->note_list[j] + (12 * i);
+			notes->len++;
+		}
+	}
+	return notes;
+}
+
+// copies list n times, n octaves lower each
+note_list * note_list_octaves_down(note_list * notes, uint8_t height) {
+
+	int i,j  = 0;
+
+	note_list orig;
+
+	note_list_copy_notes(notes, &orig);
+
+	notes->len = 0;
+	for (i =0; i < height; i++){
+		for (j = 0; j < orig.len; j++) {
+			notes->note_list[j + (orig.len * i)] = orig.note_list[j] + (12 * (height - i - 1));
+			notes->len++;
+		}
+	}
+	return notes;
+}
+
 // spits out the last note in the list (most recent)
 uint8_t note_list_most_recent(note_list * notes) {
 	return notes->note_list[notes->len - 1];

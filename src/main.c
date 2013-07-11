@@ -109,6 +109,9 @@ int main(void)
 	note_list_init(&nl);
 	note_list_init(&transformed);
 
+	transformed.len = 1;
+	transformed.note_list[0] = 60;
+
 
 	//pp6_knobs_init();
 	// go!
@@ -222,7 +225,7 @@ int main(void)
 			}*/
 
 			// up down
-			count++;
+	/*		count++;
 			period = pp6_get_knob_3() * 1000;
 			note_list_copy_notes(&nl, &transformed);
 			if (count > period) {
@@ -239,6 +242,26 @@ int main(void)
 						oct_delta = 1;
 					}
 
+				}
+				pwm_set( (c_to_f_ratio((float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100) * 10 ) * (pp6_get_knob_4() * 2 + 1));
+				pp6_set_mode_led(transformed.index & 0x7);
+			}*/
+
+
+			// up down
+			count++;
+			period = pp6_get_knob_3() * 1000;
+		//	note_list_copy_notes(&nl, &transformed);
+		//	note_list_octaves_down(&transformed, (int)(pp6_get_knob_2() * 8));
+
+
+			if (count > period) {
+				count = 0;
+				transformed.index++;
+				if (transformed.index >= transformed.len){
+					transformed.index=0;
+					note_list_copy_notes(&nl, &transformed);
+					note_list_octaves_down(&transformed, (int)(pp6_get_knob_2() * 8));
 				}
 				pwm_set( (c_to_f_ratio((float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100) * 10 ) * (pp6_get_knob_4() * 2 + 1));
 				pp6_set_mode_led(transformed.index & 0x7);

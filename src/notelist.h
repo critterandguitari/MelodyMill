@@ -22,6 +22,12 @@ note_list * note_list_init(note_list *  notes);
 // copy one note list to another
 note_list * note_list_copy_notes(note_list * src, note_list * dest);
 
+// copies list n times, n octaves higher each
+note_list * note_list_octaves_up(note_list * notes, uint8_t height);
+
+// copies list n times, n octaves lower each
+note_list * note_list_octaves_down(note_list * notes, uint8_t height);
+
 // spits out the last note in the list (most recent)
 uint8_t note_list_most_recent(note_list * notes);
 
