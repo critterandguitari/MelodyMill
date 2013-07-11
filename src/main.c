@@ -57,6 +57,7 @@ uint8_t tmp8;
 
 int main(void)
 {
+
 	uint8_t i;
 
 	uint32_t period = 0;
@@ -225,7 +226,7 @@ int main(void)
 			}*/
 
 			// up down
-	/*		count++;
+		/*	count++;
 			period = pp6_get_knob_3() * 1000;
 			note_list_copy_notes(&nl, &transformed);
 			if (count > period) {
@@ -247,9 +248,84 @@ int main(void)
 				pp6_set_mode_led(transformed.index & 0x7);
 			}*/
 
+			count++;
+			period = pp6_get_knob_3() * 1000;
+			note_list_copy_notes(&nl, &transformed);
+			if (count > period) {
+				count = 0;
+				transformed.index++;
+				if (transformed.index >= transformed.len){
+					transformed.index=0;
+					oct += oct_delta;
+					if (oct > 8) oct = 0;
+					if (oct > (int)(pp6_get_knob_2() * 8)){
+						oct_delta = -1;
+					}
+					if (oct == 0){
+						oct_delta = 1;
+					}
+
+				}
+				if (oct_delta == -1)
+					pwm_set( (c_to_f_ratio((float32_t)(transformed.note_list[(transformed.len - 1) - transformed.index]  + (oct * 12)) * 100) * 10 ) * (pp6_get_knob_4() * 2 + 1));
+				else
+					pwm_set( (c_to_f_ratio((float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100) * 10 ) * (pp6_get_knob_4() * 2 + 1));
+				pp6_set_mode_led(transformed.index & 0x7);
+			}
+
+			// down
+			// arp updated between notes
+			/*	count++;
+				period = pp6_get_knob_3() * 1000;
+				note_list_copy_notes(&nl, &transformed);
+				if (count > period) {
+					count = 0;
+					transformed.index++;
+					if (transformed.index >= transformed.len){
+						transformed.index=0;
+						oct -= 1;
+						if (oct > 8) oct = 0;
+						//if (oct > (int)(pp6_get_knob_2() * 8)){
+						//	oct_delta = -1;
+						//}
+						if (oct == 0){
+							oct = (int)(pp6_get_knob_2() * 8);
+						}
+
+					}
+					pwm_set( (c_to_f_ratio((float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100) * 10 ) * (pp6_get_knob_4() * 2 + 1));
+					pp6_set_mode_led(transformed.index & 0x7);
+				}*/
+
+				// down
+				//arp updated between octaves
+				count++;
+				period = pp6_get_knob_3() * 1000;
+			//	note_list_copy_notes(&nl, &transformed);
+			//	note_list_octaves_down(&transformed, (int)(pp6_get_knob_2() * 8));
+
+/*
+				if (count > period) {
+					count = 0;
+
+					if (!(transformed.index % nl.len)){   // every roll over of notes held down
+						note_list_copy_notes(&nl, &transformed);
+						note_list_octaves_down(&transformed, (int)(pp6_get_knob_2() * 8));
+					}
+
+					transformed.index++;
+					if (transformed.index >= transformed.len){
+						transformed.index=0;
+
+					}
+
+					pwm_set( (c_to_f_ratio((float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100) * 10 ) * (pp6_get_knob_4() * 2 + 1));
+					pp6_set_mode_led(transformed.index & 0x7);
+				}
+*/
 
 			// up down
-			count++;
+		/*	count++;
 			period = pp6_get_knob_3() * 1000;
 		//	note_list_copy_notes(&nl, &transformed);
 		//	note_list_octaves_down(&transformed, (int)(pp6_get_knob_2() * 8));
@@ -265,7 +341,7 @@ int main(void)
 				}
 				pwm_set( (c_to_f_ratio((float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100) * 10 ) * (pp6_get_knob_4() * 2 + 1));
 				pp6_set_mode_led(transformed.index & 0x7);
-			}
+			}*/
 
 
 
