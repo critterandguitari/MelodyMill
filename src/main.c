@@ -53,7 +53,7 @@ uint8_t  uart_recv_buf_write = 0;
 uint8_t  uart_recv_buf_read = 0;
 uint8_t tmp8;
 
-note_list nl;
+
 
 int main(void)
 {
@@ -65,6 +65,16 @@ int main(void)
 
 	uint8_t oct = 0;
 	int8_t oct_delta;
+
+	note_list nl;
+
+	note_list transformed;
+
+	float32_t v;
+
+	uint16_t s;
+
+	v = 0;
 
 	Delay(20000);
 	 // enable random number generator
@@ -89,13 +99,7 @@ int main(void)
 		t_last = t;
 	}*/
 
-	float32_t v;
-	q15_t out;
 
-	uint16_t s;
-
-	v = 0;
-	uint8_t k, c;
 
 	pwm_init();
 	pwm_set(100);
@@ -103,6 +107,8 @@ int main(void)
 	midi_init(1);
 
 	note_list_init(&nl);
+	note_list_init(&transformed);
+
 
 	//pp6_knobs_init();
 	// go!
@@ -218,21 +224,24 @@ int main(void)
 			// up down
 			count++;
 			period = pp6_get_knob_3() * 1000;
+			note_list_copy_notes(&nl, &transformed);
 			if (count > period) {
 				count = 0;
-				nl.index++;
-				if (nl.index >= nl.len){
-					nl.index=0;
+				transformed.index++;
+				if (transformed.index >= transformed.len){
+					transformed.index=0;
 					oct += oct_delta;
+					if (oct > 8) oct = 0;
 					if (oct > (int)(pp6_get_knob_2() * 8)){
 						oct_delta = -1;
 					}
 					if (oct == 0){
 						oct_delta = 1;
 					}
+
 				}
-				pwm_set( (c_to_f_ratio((float32_t)(nl.note_list[nl.index]  + (oct * 12)) * 100) * 10 ) * (pp6_get_knob_4() * 2 + 1));
-				pp6_set_mode_led(nl.index & 0x7);
+				pwm_set( (c_to_f_ratio((float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100) * 10 ) * (pp6_get_knob_4() * 2 + 1));
+				pp6_set_mode_led(transformed.index & 0x7);
 			}
 
 

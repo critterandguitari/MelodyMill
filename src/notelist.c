@@ -20,6 +20,19 @@ note_list * note_list_init(note_list *  notes){
 	return notes;
 }
 
+// copy one note list to another
+note_list * note_list_copy_notes(note_list * src, note_list * dest) {
+
+	int i = 0;
+
+	dest->len = src->len;
+
+	for (i = 0; i < src->len; i++)
+		dest->note_list[i] = src->note_list[i];
+
+	return dest;
+
+}
 
 // spits out the last note in the list (most recent)
 uint8_t note_list_most_recent(note_list * notes) {
