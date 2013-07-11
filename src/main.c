@@ -63,6 +63,9 @@ int main(void)
 	uint32_t count = 0;
 	uint8_t current_note = 0;
 
+	uint8_t oct = 0;
+	int8_t oct_delta;
+
 	Delay(20000);
 	 // enable random number generator
 	RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_RNG, ENABLE);
@@ -193,7 +196,26 @@ int main(void)
 			}
 			pp6_set_current_note_state_to_last();
 
-			// simple arp
+			// simple up arp
+			/*count++;
+			period = pp6_get_knob_3() * 1000;
+			if (count > period) {
+				count = 0;
+				nl.index++;
+				if (nl.index >= nl.len){
+					nl.index=0;
+					oct++;
+					if (oct > (int)(pp6_get_knob_2() * 8)){
+						oct = 0;
+					}
+				}
+
+				pwm_set( (c_to_f_ratio((float32_t)(nl.note_list[nl.index]  + (oct * 12)) * 100) * 10 ) * (pp6_get_knob_4() * 2 + 1));
+
+				pp6_set_mode_led(nl.index & 0x7);
+			}*/
+
+			// up down
 			count++;
 			period = pp6_get_knob_3() * 1000;
 			if (count > period) {
@@ -201,11 +223,15 @@ int main(void)
 				nl.index++;
 				if (nl.index >= nl.len){
 					nl.index=0;
+					oct += oct_delta;
+					if (oct > (int)(pp6_get_knob_2() * 8)){
+						oct_delta = -1;
+					}
+					if (oct == 0){
+						oct_delta = 1;
+					}
 				}
-
-
-			//	pwm_set( (c_to_f_ratio((float32_t)nl.note_list[nl.index] * 100) * 50 ) * (pp6_get_knob_4() * 2 + 1));
-
+				pwm_set( (c_to_f_ratio((float32_t)(nl.note_list[nl.index]  + (oct * 12)) * 100) * 10 ) * (pp6_get_knob_4() * 2 + 1));
 				pp6_set_mode_led(nl.index & 0x7);
 			}
 
@@ -214,7 +240,7 @@ int main(void)
 			// single shot
 			if (note_list_most_recent(&nl) != current_note){
 				current_note = note_list_most_recent(&nl);
-				pwm_set( (c_to_f_ratio((float32_t)current_note * 100) * 50 ) * (pp6_get_knob_4() * 2 + 1));
+			//	pwm_set( (c_to_f_ratio((float32_t)current_note * 100) * 50 ) * (pp6_get_knob_4() * 2 + 1));
 			}
 
 
