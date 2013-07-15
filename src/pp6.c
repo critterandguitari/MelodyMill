@@ -213,12 +213,12 @@ void pp6_change_mode(void){
 	else {
 		if (pp6.mode == 6) pp6.mode = 0;
 	}
-		pp6_set_seq_led(pp6.mode + 1);
+		pp6_set_mode_led(pp6.mode + 1);
 }
 
 void pp6_set_mode(uint32_t mode){
 	pp6.mode = mode;
-	pp6_set_seq_led(pp6.mode + 1);
+	pp6_set_mode_led(pp6.mode + 1);
 }
 
 uint32_t pp6_get_mode(void){
@@ -348,7 +348,7 @@ void pp6_get_key_events(void) {
 	}
 
 	// check mode and aux button  (we only care about a mode press, but need press and release events for aux button)
-	if ( (!((k>>17) & 1)) &&  (((k_last>>17) & 1)) ){
+	if ( (!((k>>18) & 1)) &&  (((k_last>>18) & 1)) ){
 		pp6_set_mode_button_pressed();
 	}
 	if ( (!((k>>16) & 1)) &&  (((k_last>>16) & 1)) ){
@@ -709,7 +709,7 @@ void pp6_init_digi_in(void) {
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_8;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_15 | GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_0 | GPIO_Pin_14 | GPIO_Pin_1;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_15 | GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_0 | GPIO_Pin_14 | GPIO_Pin_1 | GPIO_Pin_2;
 	GPIO_Init(GPIOD, &GPIO_InitStructure);
 
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2 | GPIO_Pin_3;
@@ -744,7 +744,8 @@ void pp6_keys_update(void){
 			(GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_14) << 14) |
 			(GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_1) << 15) |
 			(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_3) << 16) |
-			(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_2) << 17);
+			(GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_2) << 17) |
+			(GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_2) << 18);
 
 	// debounce keys
 	if ((keys_history[0] == keys_history[1]) &&
