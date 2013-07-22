@@ -61,7 +61,8 @@ int main(void)
 	uint8_t i;
 
 	uint32_t period = 0;
-	uint32_t count = 0;
+	uint32_t arp_count = 0;
+	uint32_t arp_tick = 0;
 	uint8_t current_note = 0;
 
 	uint8_t num_down;
@@ -75,14 +76,17 @@ int main(void)
 
 	note_list transformed;
 
-	float32_t v;
+	float32_t v, f, cents;
 
 	uint16_t s;
 
 	float32_t rate, range, tune, glide, dur;
 
+	uint32_t gate_time = 0;
+
 	rate = range = tune = glide = dur = 0;
 
+	uint32_t aux_button_depress_time = 0;
 
 	v = 0;
 
@@ -178,26 +182,133 @@ int main(void)
 				pp6_change_mode();
 			}
 
-			// trig, gate, clkin test
-			/*if (pp6_get_num_keys_down()) {
-				pp6_set_trig(1);
-			}
-			else {
-				pp6_set_trig(0);
-			}
-
-			if (pp6_get_clkin())
-				pp6_set_gate(1);
-			else
-				pp6_set_gate(0);*/
-
 
 			// maintain LED flasher
 			pp6_flash_update();
 
 
 		// SEQUENCER GOES HERE
-		//
+		//			// BEGIN SEQUENCER
+	        // tick the sequencer with midi clock if it is present, otherwise use internal
+			arp_count++;
+			period = rate * 200;
+			if ((arp_count > period) ) {
+				arp_tick = 1;
+				arp_count = 0;
+				seq_tick();
+
+			}
+	      /*  if (pp6_midi_clock_present()){
+	        	if (pp6_get_midi_clock_tick()){
+	        		seq_tick();
+	        		pp6_clear_midi_clock_tick();
+	        	}
+	        }
+			if (!pp6_midi_clock_present()){
+				seq_tick();
+			}*/
+
+			// sequencer states
+			if (seq_get_status() == SEQ_STOPPED){
+
+				pp6_set_seq_led(BLACK);
+
+				// aux button gets pressed and held
+				if ( (!(( pp6_get_keys() >> 17) & 1)) ) {
+					aux_button_depress_time++;
+					if (aux_button_depress_time > 500){
+						aux_button_depress_time = 0;
+						seq_set_status(SEQ_RECORD_ENABLE);
+					}
+				}
+
+				if (pp6_aux_button_pressed() || pp6_get_midi_start()) {
+					if (seq_get_length()) {  // only play if positive length
+						seq_enable_knob_playback();
+						seq_set_status(SEQ_PLAYING);
+						sendStart();  // send out a midi start
+					}
+					else seq_set_status(SEQ_STOPPED);
+					seq_rewind();
+					aux_button_depress_time = 0;
+				}
+			}
+			else if (seq_get_status() == SEQ_RECORD_ENABLE){
+				flash_led_record_enable();
+				if (pp6_aux_button_pressed()) {
+					seq_set_status(SEQ_STOPPED);
+				}
+				if (pp6_note_on_flag()){
+					seq_set_status(SEQ_RECORDING);
+					seq_start_recording();
+					seq_log_events();
+					seq_log_knobs(pp6_get_knob_array());
+					sendStart();  // send out a midi start
+				}
+				if (pp6_get_midi_start()) {
+					seq_set_status(SEQ_RECORDING);
+					seq_start_recording();
+					seq_log_first_note_null();   // sequence doesn't start with a note
+					sendStart();  // send out a midi start
+				}
+			}
+			else if (seq_get_status() == SEQ_RECORDING){
+
+				pp6_set_seq_led(RED);
+
+
+				seq_log_events();
+
+				// stop recording
+				if (pp6_aux_button_pressed() || seq_get_auto_stop()) {
+					seq_stop_recording();
+					seq_set_status(SEQ_PLAYING);
+					seq_enable_knob_playback();
+					aux_button_depress_time = 0;
+					seq_clear_auto_stop();
+					sendStop();  // send MIDI stop
+				}
+				if (pp6_get_midi_stop()) {   // if a midi stop is received, stop recording, and dont play
+					seq_stop_recording();
+					seq_set_status(SEQ_STOPPED);
+					aux_button_depress_time = 0;
+					seq_clear_auto_stop();
+					sendStop();  // send MIDI stop
+				}
+
+			}
+			else if (seq_get_status() == SEQ_PLAYING) {
+
+				seq_play_knobs();  	// play knobs
+				seq_play_tick();  	// play notes
+				aux_led_color = GREEN;
+
+				pp6_set_seq_led(aux_led_color);
+
+				// flash white on rollover
+				if (seq_get_time() == 0) pp6_flash_seq_led(75);
+
+				// aux button gets pressed and held
+				if ( (!(( pp6_get_keys() >>17) & 1)) ) {
+					aux_button_depress_time++;
+					if (aux_button_depress_time > 500){
+						aux_button_depress_time = 0;
+						seq_set_status(SEQ_RECORD_ENABLE);
+						pp6_set_synth_note_stop();  // stop the synth
+						pp6_turn_off_all_on_notes();
+					}
+				}
+				// aux button swithes to stop
+				if (pp6_aux_button_pressed() || pp6_get_midi_stop()) {
+					seq_set_status(SEQ_STOPPED);
+					aux_button_depress_time = 0;
+					pp6_set_synth_note_stop();   // stop the synth
+					pp6_turn_off_all_on_notes();
+					sendStop();  // send MIDI stop
+				}
+			}
+
+			// END SEQUENCER
 
 
 			// check for events, and send midi and play synth
@@ -219,291 +330,52 @@ int main(void)
 			}
 			pp6_set_current_note_state_to_last();
 
-			// simple up arp
-			/*count++;
-			period = rate * 1000;
-			if (count > period) {
-				count = 0;
-				nl.index++;
-				if (nl.index >= nl.len){
-					nl.index=0;
-					oct++;
-					if (oct > (int)(range * 8)){
-						oct = 0;
-					}
-				}
-
-				pwm_set( (c_to_f_ratio((float32_t)(nl.note_list[nl.index]  + (oct * 12)) * 100) * 10 ) * (tune * 2 + 1));
-
-				pp6_set_mode_led(nl.index & 0x7);
-			}*/
-
-			// up down
-			/*count++;
-			period = rate * 1000;
-			note_list_copy_notes(&nl, &transformed);
-			if (count > period) {
-				count = 0;
-				transformed.index++;
-				if (transformed.index >= transformed.len){
-					transformed.index=0;
-					oct += oct_delta;
-					if (oct > 8) oct = 0;
-					if (oct > (int)(range * 8)){
-						oct_delta = -1;
-					}
-					if (oct == 0){
-						oct_delta = 1;
-					}
-
-				}
-				pwm_set( (c_to_f_ratio((float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100) * 10 ) * (tune * 2 + 1));
-				pp6_set_mode_led(transformed.index & 0x7);
-			}*/
-
-
-				/*	if (pp6_get_mode() == 1)  mode_wave_adder_control_process ();
-					if (pp6_get_mode() == 2)  mode_analog_style_control_process();
-					if (pp6_get_mode() == 3)  mode_filter_envelope_control_process();
-					if (pp6_get_mode() == 4)  mode_simple_fm_control_process();
-					if (pp6_get_mode() == 5)  mode_bass_delay_control_process();
-					if (pp6_get_mode() == 6)  mode_plurden_control_process();   // SECRET MODE ??*/
-
-
 			// UP with REVERSE DOWN
 			if (pp6_get_mode() == 0){
-				count++;
-				period = rate * 200;
 				note_list_copy_notes(&nl, &transformed);
-				if (count > period) {
-					count = 0;
-					transformed.index++;
-					if (transformed.index >= transformed.len){
-						transformed.index=0;
-						oct += oct_delta;
-						if (oct > 8) oct = 0;
-						if (oct > ((int)(range * 8))){
-							oct_delta = -1;
+				if (arp_tick ) {
+					if (nl.len > 0) { // if notes are down
+						arp_tick = 0;
+						transformed.index++;
+						if (transformed.index >= transformed.len){
+							transformed.index=0;
+							oct += oct_delta;
+							if (oct > 8) oct = 0;
+							if (oct > ((int)(range * 8))){
+								oct_delta = -1;
+							}
+							if (oct == 0){
+								oct_delta = 1;
+							}
+
+
 						}
-						if (oct == 0){
-							oct_delta = 1;
-						}
+						if (oct_delta == -1)
+							cents = (float32_t)(transformed.note_list[(transformed.len - 1) - transformed.index]  + (oct * 12)) * 100;
 
+						else
+							cents = (float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100;
 
+						v = cents / 1200.f;
+						pwm_set( (c_to_f_ratio(cents) * 10 ) * (tune * 2 + 1));
+						pp6_set_clk_led(transformed.index & 0x7);
+						gate_time = (int)(dur * 200);
 					}
-					if (oct_delta == -1)
-						pwm_set( (c_to_f_ratio((float32_t)(transformed.note_list[(transformed.len - 1) - transformed.index]  + (oct * 12)) * 100) * 10 ) * (tune * 2 + 1));
-					else
-						pwm_set( (c_to_f_ratio((float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100) * 10 ) * (tune * 2 + 1));
-					pp6_set_clk_led(transformed.index & 0x7);
-				}
-			}
-			// down
-			// arp updated between notes
-			/*	count++;
-				period = rate * 1000;
-				note_list_copy_notes(&nl, &transformed);
-				if (count > period) {
-					count = 0;
-					transformed.index++;
-					if (transformed.index >= transformed.len){
+					else {   // no notes down, reset arp
 						transformed.index=0;
-						oct -= 1;
-						if (oct > 8) oct = 0;
-						//if (oct > (int)(range * 8)){
-						//	oct_delta = -1;
-						//}
-						if (oct == 0){
-							oct = (int)(range * 8);
-						}
-
+						oct = 0;
+						oct_delta = 0;
 					}
-					pwm_set( (c_to_f_ratio((float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100) * 10 ) * (tune * 2 + 1));
-					pp6_set_mode_led(transformed.index & 0x7);
-				}*/
+				}  // click
+			} // mode 0
 
-
-				// down
-				//arp updated between octaves
-			if (pp6_get_mode() == 1) {
-				count++;
-				period = rate * 200;
-				if (nl.len > num_down){
-					note_list_copy_notes(&nl, &transformed);
-					note_list_octaves_down(&transformed, (int)(range * 8));
-				}
-				num_down = nl.len;
-
-
-				if (count > period) {
-					count = 0;
-
-					if (!(transformed.index % nl.len)){   // every roll over of notes held down
-						note_list_copy_notes(&nl, &transformed);
-						note_list_octaves_down(&transformed, (int)(range * 8));
-					}
-					transformed.index++;
-					if (transformed.index >= transformed.len){
-						transformed.index=0;
-
-					}
-					pwm_set( (c_to_f_ratio((float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100) * 10 ) * (tune * 2 + 1));
-					pp6_set_clk_led(transformed.index & 0x7);
-				}
+			if(gate_time) {
+				gate_time--;
+				pp6_set_gate(1);
 			}
-
-
-			// up
-			//arp updated between octaves
-		if (pp6_get_mode() == 2) {
-			count++;
-			period = rate * 200;
-			if (nl.len > num_down){
-				note_list_copy_notes(&nl, &transformed);
-				note_list_octaves_down(&transformed, (int)(range * 8));
+			else {
+				pp6_set_gate(0);
 			}
-			num_down = nl.len;
-
-
-			if (count > period) {
-				count = 0;
-
-				if (!(transformed.index % nl.len)){   // every roll over of notes held down
-					note_list_copy_notes(&nl, &transformed);
-					note_list_octaves_up(&transformed, (int)(range * 8));
-				}
-				transformed.index++;
-				if (transformed.index >= transformed.len){
-					transformed.index=0;
-
-				}
-				pwm_set( (c_to_f_ratio((float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100) * 10 ) * (tune * 2 + 1));
-				pp6_set_clk_led(transformed.index & 0x7);
-			}
-		}
-
-		// random
-		//arp updated between octaves
-	if (pp6_get_mode() == 3) {
-
-
-		count++;
-		period = rate * 200;
-		if (nl.len > num_down){
-			note_list_copy_notes(&nl, &transformed);
-			note_list_octaves_down(&transformed, (int)(range * 8));
-		}
-		num_down = nl.len;
-
-
-		if (count > period) {
-			count = 0;
-
-			if (!(transformed.index % nl.len)){   // every roll over of notes held down
-				note_list_copy_notes(&nl, &transformed);
-				note_list_octaves_up(&transformed, (int)(range * 8));
-			}
-			transformed.index++;
-			if (transformed.index >= transformed.len){
-				transformed.index=0;
-
-			}
-			pwm_set( (c_to_f_ratio((float32_t)(transformed.note_list[(RNG_GetRandomNumber() & 0xff) % transformed.len]  + (oct * 12)) * 100) * 10 ) * (tune * 2 + 1));
-			pp6_set_clk_led(transformed.index & 0x7);
-		}
-	}
-
-			// UP DOWN MIRROR  using note_list
-			//arp updated between octaves
-		/*	count++;
-			period = rate * 1000;
-
-			note_list up;
-			note_list down;
-			note_list_init(&up);
-			note_list_init(&down);
-
-			if (count > period) {
-				count = 0;
-
-				if (!(transformed.index % nl.len)){   // every roll over of notes held down
-					note_list_copy_notes(&nl, &up);
-					note_list_copy_notes(&nl, &down);
-
-					note_list_octaves_up(&up, (int)(range * 8));
-
-					note_list_mirror(&down);
-					note_list_octaves_down(&down, ((int)(range * 8) - 2));
-					note_list_transpose(&down, 12);
-
-
-					note_list_copy_notes(&up, &transformed);
-					note_list_append(&transformed, &down);
-
-				}
-				transformed.index++;
-				if (transformed.index >= transformed.len){
-					transformed.index=0;
-
-				}
-				pwm_set( (c_to_f_ratio((float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100) * 10 ) * (tune * 2 + 1));
-				pp6_set_mode_led(transformed.index & 0x7);
-			}*/
-
-
-
-				// down by 3
-		/*		count++;
-				period = rate * 1000;
-				//if (nl.len > num_down){
-					note_list_copy_notes(&nl, &transformed);
-					note_list_make_3(&transformed);
-					note_list_octaves_down(&transformed, (int)(range * 8));
-				//}
-				num_down = nl.len;
-
-
-				if (count > period) {
-					count = 0;
-
-					/*if (!(transformed.index % nl.len)){   // every roll over of notes held down
-						note_list_copy_notes(&nl, &transformed);
-						note_list_make_3(&transformed);
-						note_list_octaves_down(&transformed, (int)(range * 8));
-					}*/
-				/*	transformed.index++;
-					if (transformed.index >= transformed.len){
-						transformed.index=0;
-
-					}
-					pwm_set( (c_to_f_ratio((float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100) * 10 ) * (tune * 2 + 1));
-					pp6_set_mode_led(transformed.index & 0x7);
-				}*/
-
-
-
-
-			// up down
-			//count++;
-			//period = rate * 1000;
-		/*	if (note_list_changed_length(&nl)){
-				note_list_copy_notes(&nl, &transformed);
-				note_list_octaves_down(&transformed, (int)(range * 8));
-			}*/
-
-
-		/*	if (count > period) {
-				count = 0;
-				transformed.index++;
-				if (transformed.index >= transformed.len){
-					transformed.index=0;
-					note_list_copy_notes(&nl, &transformed);
-					note_list_octaves_down(&transformed, (int)(range * 8));
-					my_octave = 1;
-				}
-				pwm_set( (c_to_f_ratio((float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100) * 10 ) * (tune * 2 + 1));
-				pp6_set_mode_led(transformed.index & 0x7);
-			}*/
 
 
 
@@ -513,57 +385,6 @@ int main(void)
 			//	pwm_set( (c_to_f_ratio((float32_t)current_note * 100) * 50 ) * (tune * 2 + 1));
 			}
 
-
-			//pp6_set_mode_led(c);
-
-			// if we got a note
-			/*if (pp6_get_synth_note_start()){
-
-				pwm_set( (c_to_f_ratio((float32_t)pp6_get_synth_note() * 100) * 50 ) * (tune * 2 + 1));
-				pp6_set_gate(1);
-
-			}
-			if (pp6_get_synth_note_stop()){
-
-				pp6_set_gate(0);
-			}*/
-
-
-
-
-
-
-		/*	for (i = 0; i< 16; i++) {
-				if (! ((pp6_get_keys() >> i) & 1) ) {
-					v = (i * (1.f / 12.f)) + 2.f;
-
-					pwm_set( (c_to_f_ratio(i * 100) * 100 ) * (tune * 2 + 1));
-
-					break;
-				}
-			}
-
-			k++;
-			k &= 0xff;
-			if (k == 0) sendNoteOff(1, i+ 60, 0);
-			if (k == 128) sendNoteOn(1, i + 60, 110);
-
-			if (!k){
-				c++;
-				c &= 0x7;
-				pp6_set_mode_led(c);
-				pp6_set_seq_led(c);
-				pp6_set_clk_led(c);
-
-
-			}*/
-
-
-			// test vout
-			//if ( (!(( pp6_get_keys() >>16) & 1)) )
-			//	v = v + 1.f;
-
-
 			// clear all the events
 			pp6_clear_flags();
 			led_counter++;
@@ -571,7 +392,6 @@ int main(void)
 			note_list_set_current_to_last(&nl);
 			note_list_set_current_to_last(&transformed);
 
-			//v = 5.f;
 
 		}
 

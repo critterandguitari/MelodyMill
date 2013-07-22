@@ -13,7 +13,7 @@
 
 
 void pwm_init(void);
-void pwm_set(float32_t f);
+float32_t pwm_set(float32_t f);
 void pwm_test(void);
 
 #endif /* PWM_H_ */

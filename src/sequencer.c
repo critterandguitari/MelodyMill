@@ -82,7 +82,7 @@ void seq_log_events(void) {
 			}
 		}
 	}
-	seq_log_knobs(pp6_get_knob_array());
+	//seq_log_knobs(pp6_get_knob_array());
 }
 
 void seq_stop_recording(void) {
@@ -193,13 +193,13 @@ void seq_play_knobs(void) {
 	}
 
 	if (seq_knob_1_playback_enabled) {
-		pp6_set_knob_1(knob_log[knob_log_time][0]);
+	//	pp6_set_knob_1(knob_log[knob_log_time][0]);
 	}
 	if (seq_knob_2_playback_enabled) {
-		pp6_set_knob_2(knob_log[knob_log_time][1]);
+	//	pp6_set_knob_2(knob_log[knob_log_time][1]);
 	}
 	if (seq_knob_3_playback_enabled) {
-		pp6_set_knob_3(knob_log[knob_log_time][2]);
+	//	pp6_set_knob_3(knob_log[knob_log_time][2]);
 	}
 
 	//return &knob_log[knob_log_time][0];

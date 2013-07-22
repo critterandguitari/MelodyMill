@@ -70,7 +70,7 @@ void pwm_init(void) {
     TIM_CtrlPWMOutputs(TIM1, ENABLE);
 }
 
-void pwm_set(float32_t f) {
+float32_t pwm_set(float32_t f) {
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
     TIM_OCInitTypeDef               TIM_OCInitStructure;
     uint32_t                                period;
@@ -100,7 +100,7 @@ void pwm_set(float32_t f) {
     if (TIM1->CNT >= period)
     	TIM1->CNT = 0;
 
-
+    return f;
 
 }
 

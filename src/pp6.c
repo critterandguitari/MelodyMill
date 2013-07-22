@@ -351,10 +351,10 @@ void pp6_get_key_events(void) {
 	if ( (!((k>>18) & 1)) &&  (((k_last>>18) & 1)) ){
 		pp6_set_mode_button_pressed();
 	}
-	if ( (!((k>>16) & 1)) &&  (((k_last>>16) & 1)) ){
+	if ( (!((k>>17) & 1)) &&  (((k_last>>17) & 1)) ){
 		pp6_set_aux_button_pressed();
 	}
-	if ( (((k>>16) & 1)) &&  (!((k_last>>16) & 1)) ){
+	if ( (((k>>17) & 1)) &&  (!((k_last>>17) & 1)) ){
 		pp6_set_aux_button_released();
 	}
 
