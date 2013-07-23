@@ -65,9 +65,6 @@ int main(void)
 	uint32_t arp_tick = 0;
 	uint8_t current_note = 0;
 
-	uint8_t num_down;
-
-	uint8_t my_octave = 0;
 
 	uint8_t oct = 0;
 	int8_t oct_delta;
@@ -83,6 +80,7 @@ int main(void)
 	float32_t rate, range, tune, glide, dur;
 
 	uint32_t gate_time = 0;
+	uint32_t gate_reset = 4;
 
 	rate = range = tune = glide = dur = 0;
 
@@ -385,6 +383,7 @@ int main(void)
 						pwm_set( (c_to_f_ratio(cents) * 10 ) * (tune * 2 + 1));
 						pp6_set_clk_led(transformed.index & 0x7);
 						gate_time = (int)(dur * 200);
+						gate_reset = 4;  // 4 control periods of reset
 					}
 					else {   // no notes down, reset arp
 						transformed.index=0;
@@ -394,12 +393,19 @@ int main(void)
 				}  // click
 			} // mode 0
 
-			if(gate_time) {
-				gate_time--;
-				pp6_set_gate(1);
-			}
-			else {
+			// gate goes low for 2 ms before going high (so we always have a note)
+			if (gate_reset){
+				gate_reset--;
 				pp6_set_gate(0);
+			}
+			else {  // after gate has been low for a couple ms, bring it high for the specified dur
+				if(gate_time) {
+					gate_time--;
+					pp6_set_gate(1);
+				}
+				else {
+					pp6_set_gate(0);
+				}
 			}
 
 
