@@ -209,28 +209,43 @@ int main(void)
 			}*/
 
 			// sequencer states
+			// TODO add HOLDING state
 			if (seq_get_status() == SEQ_STOPPED){
 
 				pp6_set_seq_led(BLACK);
 
 				// aux button gets pressed and held
-				if ( (!(( pp6_get_keys() >> 17) & 1)) ) {
-					aux_button_depress_time++;
-					if (aux_button_depress_time > 500){
+				if ( !pp6_get_physical_notes_on() ) {  // only if there are not notes held down, and a hold is not already set
+
+					if ( (!(( pp6_get_keys() >> 17) & 1)) ) {
+						aux_button_depress_time++;
+						if (aux_button_depress_time > 500){
+							aux_button_depress_time = 0;
+							seq_set_status(SEQ_RECORD_ENABLE);
+						}
+					}
+
+					if (pp6_aux_button_pressed() || pp6_get_midi_start()) {
+						if (seq_get_length()) {  // only play if positive length
+							seq_enable_knob_playback();
+							seq_set_status(SEQ_PLAYING);
+							sendStart();  // send out a midi start
+						}
+						else seq_set_status(SEQ_STOPPED);
+						seq_rewind();
 						aux_button_depress_time = 0;
-						seq_set_status(SEQ_RECORD_ENABLE);
 					}
 				}
-
-				if (pp6_aux_button_pressed() || pp6_get_midi_start()) {
-					if (seq_get_length()) {  // only play if positive length
-						seq_enable_knob_playback();
-						seq_set_status(SEQ_PLAYING);
-						sendStart();  // send out a midi start
+				else {  // check for hold condition
+					if (pp6_aux_button_pressed()) {
+						seq_set_status(SEQ_HOLDING);
 					}
-					else seq_set_status(SEQ_STOPPED);
-					seq_rewind();
-					aux_button_depress_time = 0;
+				}
+			}
+			else if (seq_get_status() == SEQ_HOLDING){
+				pp6_set_seq_led(MAGENTA);
+				if (pp6_aux_button_pressed()) {
+					seq_set_status(SEQ_STOPPED);
 				}
 			}
 			else if (seq_get_status() == SEQ_RECORD_ENABLE){
@@ -311,24 +326,33 @@ int main(void)
 			// END SEQUENCER
 
 
-			// check for events, and send midi and play synth
-			// TODO :  don't sent midi from here, send it from the arps
-			for (i = 0; i < 128; i++) {
-				if (pp6_get_note_state(i) != pp6_get_note_state_last(i)) {
-					if (pp6_get_note_state(i)) {
-						sendNoteOn(1, i, 100);
-						note_list_note_on(&nl, i);
-						pp6_set_synth_note_start();
-						pp6_set_synth_note(i);
-					}
-					else {
-						sendNoteOff(1, i, 0);
-						note_list_note_off(&nl, i);
-						if (i ==  pp6_get_synth_note()) pp6_set_synth_note_stop();  // if it equals the currently playing note, shut it off
+			// check for a new key press that releases hold condition
+			if (seq_get_status() == SEQ_HOLDING ){
+				for (i = 0; i < 128; i++) {
+					if (pp6_get_note_state(i) != pp6_get_note_state_last(i)) {
+						if (pp6_get_note_state(i)) {
+							seq_set_status(SEQ_STOPPED);
+						}
 					}
 				}
 			}
-			pp6_set_current_note_state_to_last();
+			// check for events and update the note list, only if we are not holding
+			if (seq_get_status() != SEQ_HOLDING ){
+				for (i = 0; i < 128; i++) {
+					if (pp6_get_note_state(i) != pp6_get_note_state_last(i)) {
+						if (pp6_get_note_state(i)) {
+							note_list_note_on(&nl, i);
+						}
+						else {
+							note_list_note_off(&nl, i);
+						}
+					}
+				}
+				pp6_set_current_note_state_to_last();
+			}
+
+
+
 
 			// UP with REVERSE DOWN
 			if (pp6_get_mode() == 0){
@@ -345,6 +369,7 @@ int main(void)
 								oct_delta = -1;
 							}
 							if (oct == 0){
+							//	note_list_copy_notes(&nl, &transformed);  //
 								oct_delta = 1;
 							}
 
@@ -434,11 +459,11 @@ int main(void)
 void flash_led_record_enable() {
 	if (led_counter > 150){
 		led_counter = 0;
-		if (pp6_get_mode_led()){
-			pp6_set_mode_led(0);
+		if (pp6_get_seq_led()){
+			pp6_set_seq_led(0);
 		}
 		else {
-			pp6_set_mode_led(1);
+			pp6_set_seq_led(1);
 		}
 	}
 }

@@ -14,6 +14,7 @@
 #define SEQ_RECORD_ENABLE 1
 #define SEQ_RECORDING 2
 #define SEQ_PLAYING 3
+#define SEQ_HOLDING 4
 
 // sequencer events
 #define SEQ_NOTE_STOP 2

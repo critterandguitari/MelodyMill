@@ -72,6 +72,7 @@ typedef struct {
 	uint32_t keys_last;
 	uint8_t num_keys_down;
 
+
 	// current mode
 	uint32_t mode;
 
