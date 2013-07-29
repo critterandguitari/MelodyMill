@@ -80,7 +80,7 @@ int main(void)
 	float32_t rate, range, tune, glide, dur;
 
 	uint32_t gate_time = 0;
-	uint32_t gate_reset = 4;
+	uint32_t gate_reset = 0;
 
 	rate = range = tune = glide = dur = 0;
 
@@ -187,15 +187,7 @@ int main(void)
 
 		// SEQUENCER GOES HERE
 		//			// BEGIN SEQUENCER
-	        // tick the sequencer with midi clock if it is present, otherwise use internal
-			arp_count++;
-			period = rate * 200;
-			if ((arp_count > period) ) {
-				arp_tick = 1;
-				arp_count = 0;
-				seq_tick();
 
-			}
 	      /*  if (pp6_midi_clock_present()){
 	        	if (pp6_get_midi_clock_tick()){
 	        		seq_tick();
@@ -225,6 +217,13 @@ int main(void)
 
 					if (pp6_aux_button_pressed() || pp6_get_midi_start()) {
 						if (seq_get_length()) {  // only play if positive length
+
+							// TODO :: ?? can't have this in here  (atleast have a reset_arps() function)
+							//RESET ARPS
+							transformed.index=0;
+							oct = 0;
+							oct_delta = 1;
+
 							seq_enable_knob_playback();
 							seq_set_status(SEQ_PLAYING);
 							sendStart();  // send out a midi start
@@ -280,6 +279,12 @@ int main(void)
 					aux_button_depress_time = 0;
 					seq_clear_auto_stop();
 					sendStop();  // send MIDI stop
+
+					// TODO :: ?? can't have this in here  (atleast have a reset_arps() function)
+					//RESET ARPS
+					transformed.index=0;
+					oct = 0;
+					oct_delta = 1;
 				}
 				if (pp6_get_midi_stop()) {   // if a midi stop is received, stop recording, and dont play
 					seq_stop_recording();
@@ -320,7 +325,14 @@ int main(void)
 					sendStop();  // send MIDI stop
 				}
 			}
-
+	        // tick the sequencer with midi clock if it is present, otherwise use internal
+			arp_count++;
+			period = rate * 200;
+			if ((arp_count > period) ) {
+				arp_tick = 1;
+				arp_count = 0;
+				seq_tick();
+			}
 			// END SEQUENCER
 
 
@@ -355,24 +367,27 @@ int main(void)
 			// UP with REVERSE DOWN
 			if (pp6_get_mode() == 0){
 				note_list_copy_notes(&nl, &transformed);
-				if (arp_tick ) {
-					if (nl.len > 0) { // if notes are down
+
+				if (nl.len > 0) { // if notes are down
+
+					if (arp_tick ) { // got an arp tick
 						arp_tick = 0;
-						transformed.index++;
 						if (transformed.index >= transformed.len){
 							transformed.index=0;
 							oct += oct_delta;
 							if (oct > 8) oct = 0;
 							if (oct > ((int)(range * 8))){
 								oct_delta = -1;
+								//oct -= 1;  // play last octave twice
 							}
 							if (oct == 0){
 							//	note_list_copy_notes(&nl, &transformed);  //
 								oct_delta = 1;
 							}
 
-
+							//((int)(range * 8)
 						}
+
 						if (oct_delta == -1)
 							cents = (float32_t)(transformed.note_list[(transformed.len - 1) - transformed.index]  + (oct * 12)) * 100;
 
@@ -384,13 +399,16 @@ int main(void)
 						pp6_set_clk_led(transformed.index & 0x7);
 						gate_time = (int)(dur * 200);
 						gate_reset = 4;  // 4 control periods of reset
-					}
-					else {   // no notes down, reset arp
-						transformed.index=0;
-						oct = 0;
-						oct_delta = 0;
-					}
-				}  // click
+
+						transformed.index++;
+					} // click
+				}
+				else {   // no notes down, reset arp
+					if (arp_tick ) arp_tick = 0; // keep this unchecked
+					transformed.index=0;
+					oct = 0;
+					oct_delta = 1;
+				}
 			} // mode 0
 
 			// gate goes low for 2 ms before going high (so we always have a note)

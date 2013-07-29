@@ -117,10 +117,10 @@ void seq_rewind(void) {
 	seq_time = 0;
 }
 
-// TODO:  this should be set all events for this delta time on this tick  -- don't think this really matters
+// TODO:  this should be set all events for this delta time on this tick  -- don't think this really matters  -- no it matters for playing using wide ticks
 void seq_play_tick (void){
 
-	if (seq_time >= seq_deltas[seq_index]){
+/*	if (seq_time >= seq_deltas[seq_index]){
 		if (seq_events[seq_index] == SEQ_NOTE_START){
 			// a physical note down will mute sequence
 			if (!pp6_get_physical_notes_on()){
@@ -138,7 +138,30 @@ void seq_play_tick (void){
 			seq_time = 0;
 			pp6_turn_off_all_on_notes();// end all notes still playing at end of loop
 		}
+	}*/
+
+	while (seq_time >= seq_deltas[seq_index]){
+		if (seq_events[seq_index] == SEQ_NOTE_START){
+			// a physical note down will mute sequence
+			if (!pp6_get_physical_notes_on()){
+				pp6_set_note_on(seq_notes[seq_index]);
+			}
+		}
+		if (seq_events[seq_index] == SEQ_NOTE_STOP){
+			// stop it, but only if its sounding (its note on might have been muted)
+				if (pp6_get_note_state(seq_notes[seq_index]))
+					pp6_set_note_off(seq_notes[seq_index]);
+		}
+		seq_index++;
+		if (seq_index > seq_length){
+			seq_index = 0;
+			seq_time = 0;
+			pp6_turn_off_all_on_notes();// end all notes still playing at end of loop
+			break;
+		}
 	}
+
+
 }
 
 void seq_tick(void){
