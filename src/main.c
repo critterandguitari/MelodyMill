@@ -163,10 +163,14 @@ int main(void)
 	            recvByte(tmp8);
 	        }
 
+	        // midi clock auto detection
+	        pp6_check_for_midi_clock();
+
 	        // update keys knobs
 			pp6_keys_update();
 			pp6_knobs_update();
 
+			// update params
 			rate = pp6_get_knob_5();
 			range = pp6_get_knob_4();
 			tune = pp6_get_knob_1();
@@ -180,24 +184,22 @@ int main(void)
 				pp6_change_mode();
 			}
 
-
 			// maintain LED flasher
 			pp6_flash_update();
 
+			// determine clock source
+			if (pp6_midi_clock_present()){
+				pp6_set_clk_src(CLK_SRC_MIDI);
+				pp6_set_clk_led(GREEN);
 
-		// SEQUENCER GOES HERE
-		//			// BEGIN SEQUENCER
-
-	      /*  if (pp6_midi_clock_present()){
-	        	if (pp6_get_midi_clock_tick()){
-	        		seq_tick();
-	        		pp6_clear_midi_clock_tick();
-	        	}
-	        }
+			}
 			if (!pp6_midi_clock_present()){
-				seq_tick();
-			}*/
+				pp6_set_clk_src(CLK_SRC_INT);
+				pp6_set_clk_led(BLUE);
+			}
 
+			// SEQUENCER GOES HERE
+			//			// BEGIN SEQUENCER
 			// sequencer states
 			// TODO add HOLDING state
 			if (seq_get_status() == SEQ_STOPPED){
@@ -325,6 +327,8 @@ int main(void)
 					sendStop();  // send MIDI stop
 				}
 			}
+
+
 	        // tick the sequencer with midi clock if it is present, otherwise use internal
 			arp_count++;
 			period = rate * 200;
@@ -333,6 +337,8 @@ int main(void)
 				arp_count = 0;
 				seq_tick();
 			}
+
+
 			// END SEQUENCER
 
 
@@ -378,15 +384,12 @@ int main(void)
 							if (oct > 8) oct = 0;
 							if (oct > ((int)(range * 8))){
 								oct_delta = -1;
-								//oct -= 1;  // play last octave twice
 							}
 							if (oct == 0){
-							//	note_list_copy_notes(&nl, &transformed);  //
 								oct_delta = 1;
 							}
-
-							//((int)(range * 8)
 						}
+
 
 						if (oct_delta == -1)
 							cents = (float32_t)(transformed.note_list[(transformed.len - 1) - transformed.index]  + (oct * 12)) * 100;
@@ -396,7 +399,6 @@ int main(void)
 
 						v = cents / 1200.f;
 						pwm_set( (c_to_f_ratio(cents) * 10 ) * (tune * 2 + 1));
-						pp6_set_clk_led(transformed.index & 0x7);
 						gate_time = (int)(dur * 200);
 						gate_reset = 4;  // 4 control periods of reset
 

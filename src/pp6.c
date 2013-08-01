@@ -69,6 +69,8 @@ void pp6_init(void) {
 	pp6.seq_led_flash = 0;
 	pp6.mode_led_flash = 0;
 
+	pp6.clock_source = CLK_SRC_INT;
+
 	// init the note on arrays
 	for (i = 0; i < 128; i++) {
 		pp6.note_state[i] = 0;
@@ -91,9 +93,16 @@ void pp6_set_gate(uint32_t stat){
 		GPIO_WriteBit(GPIOD, GPIO_Pin_4, 0);
 }
 
-uint32_t pp6_get_clkin(void){
+uint8_t pp6_get_cv_clk(void){
 	if (!(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_6))) return 0;
 	else return 1;
+}
+
+uint8_t pp6_get_clk_src(void){
+	return pp6.clock_source;
+}
+void pp6_set_clk_src(uint8_t s){
+	pp6.clock_source = s;
 }
 
 void pp6_enable_secret_mode(void) {
@@ -111,7 +120,7 @@ void pp6_midi_clock_tick(void) {
 	pp6.midi_clock_tick_count++;
 	if (pp6.midi_clock_tick_count == 24){
 		pp6.midi_clock_tick_count = 0;
-		pp6_flash_mode_led(40);
+//		pp6_flash_mode_led(40);
 	}
 }
 

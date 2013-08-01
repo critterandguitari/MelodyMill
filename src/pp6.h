@@ -31,6 +31,10 @@
 #define CLK_LED_RED_OFF GPIO_WriteBit(GPIOC, GPIO_Pin_4, 1)
 #define CLK_LED_GREEN_OFF GPIO_WriteBit(GPIOC, GPIO_Pin_5, 1)
 
+#define CLK_SRC_INT 0
+#define CLK_SRC_CV 1
+#define CLK_SRC_MIDI 2
+
 #define BLACK 0
 #define RED 1
 #define YELLOW 2
@@ -98,13 +102,16 @@ typedef struct {
 	uint8_t midi_clock_tick_count;
 	uint8_t midi_clock_flag;
 
+	// Global clock
+	uint8_t clock_source;
+
 } pocket_piano;
 
 void pp6_init(void);
 
 void pp6_set_trig(uint32_t stat);
 void pp6_set_gate(uint32_t stat);
-uint32_t pp6_get_clkin(void);
+uint8_t pp6_get_cv_clk(void);
 
 void pp6_enable_secret_mode(void);
 
@@ -163,7 +170,7 @@ void pp6_set_clk_led(uint8_t led) ;
 uint8_t pp6_get_clk_led(void);
 
 void pp6_flash_mode_led(uint8_t flash_time);
-void pp6_flash_mode_led(uint8_t flash_time);
+void pp6_flash_seq_led(uint8_t flash_time);
 void pp6_flash_update(void);
 
 void  pp6_set_mode_button_pressed(void);
@@ -203,6 +210,11 @@ uint8_t pp6_get_note_state(uint8_t note);
 uint8_t pp6_get_note_state_last(uint8_t);
 void pp6_set_current_note_state_to_last(void);
 void pp6_turn_off_all_on_notes(void);
+
+
+// Clock stuff
+uint8_t pp6_get_clk_src(void);
+void pp6_set_clk_src(uint8_t);
 
 
 #endif /* PP6_H_ */
