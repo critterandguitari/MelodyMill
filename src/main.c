@@ -39,6 +39,8 @@ static uint32_t sample_clock_last = 0;
 
 static void Delay(__IO uint32_t nCount);
 static void flash_led_record_enable(void);
+static void play_note(void);
+static void adjust_f(void);
 
 // led stuff
 static uint32_t led_counter = 0;  // for the above flash function
@@ -53,7 +55,11 @@ uint8_t  uart_recv_buf_write = 0;
 uint8_t  uart_recv_buf_read = 0;
 uint8_t tmp8;
 
-
+uint32_t gate_time = 0;
+uint32_t gate_reset = 0;
+float32_t v, cents, cents_target;
+float32_t rate, range, tune, glide, dur;
+float32_t glide_step;
 
 int main(void)
 {
@@ -73,14 +79,13 @@ int main(void)
 
 	note_list transformed;
 
-	float32_t v, f, cents;
+
 
 	uint16_t s;
 
-	float32_t rate, range, tune, glide, dur;
 
-	uint32_t gate_time = 0;
-	uint32_t gate_reset = 0;
+
+
 
 	rate = range = tune = glide = dur = 0;
 
@@ -382,26 +387,19 @@ int main(void)
 							transformed.index=0;
 							oct += oct_delta;
 							if (oct > 8) oct = 0;
-							if (oct > ((int)(range * 8))){
+							if (oct > ((int)(range * 6))){
 								oct_delta = -1;
 							}
 							if (oct == 0){
 								oct_delta = 1;
 							}
 						}
-
-
 						if (oct_delta == -1)
-							cents = (float32_t)(transformed.note_list[(transformed.len - 1) - transformed.index]  + (oct * 12)) * 100;
-
+							cents_target = (float32_t)(transformed.note_list[(transformed.len - 1) - transformed.index]  + (oct * 12)) * 100;
 						else
-							cents = (float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100;
+							cents_target = (float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100;
 
-						v = cents / 1200.f;
-						pwm_set( (c_to_f_ratio(cents) * 10 ) * (tune * 2 + 1));
-						gate_time = (int)(dur * 200);
-						gate_reset = 4;  // 4 control periods of reset
-
+						play_note();
 						transformed.index++;
 					} // click
 				}
@@ -452,6 +450,7 @@ int main(void)
 		 * Sample Rate
 		 */
 		if (software_index != hardware_index){
+			adjust_f();
 
 			if (software_index & 1){   // channel
 
@@ -481,6 +480,33 @@ int main(void)
 	}
 }
 
+
+void play_note(void){
+	//cents = cents_target;
+	gate_time = (int)(dur * 200);
+	gate_reset = 4;  // 4 control periods of reset
+
+	glide_step = ABS(cents - cents_target) / (glide * 10000);   // determine slope for fix time glide
+
+}
+
+void adjust_f(void){
+
+
+
+
+	if (ABS(cents - cents_target) <= glide_step)  // if within 1 glide step
+		cents = cents_target;
+
+	else if (cents < cents_target)
+		cents += glide_step;
+	else if (cents > cents_target)
+		cents -= glide_step;
+
+
+	v = cents / 1200.f;
+	pwm_set( (c_to_f_ratio(cents) * 10 ) * (tune * 2 + 1));
+}
 
 void flash_led_record_enable() {
 	if (led_counter > 150){
