@@ -61,6 +61,8 @@ float32_t v, cents, cents_target;
 float32_t rate, range, tune, glide, dur;
 float32_t glide_step;
 
+uint8_t current_midi_clock = 0;
+
 int main(void)
 {
 
@@ -195,12 +197,12 @@ int main(void)
 			// determine clock source
 			if (pp6_midi_clock_present()){
 				pp6_set_clk_src(CLK_SRC_MIDI);
-				pp6_set_clk_led(GREEN);
+				//pp6_set_clk_led(GREEN);
 
 			}
 			if (!pp6_midi_clock_present()){
 				pp6_set_clk_src(CLK_SRC_INT);
-				pp6_set_clk_led(BLUE);
+				//pp6_set_clk_led(BLUE);
 			}
 
 			// SEQUENCER GOES HERE
@@ -335,12 +337,59 @@ int main(void)
 
 
 	        // tick the sequencer with midi clock if it is present, otherwise use internal
-			arp_count++;
-			period = rate * 200;
-			if ((arp_count > period) ) {
-				arp_tick = 1;
-				arp_count = 0;
-				seq_tick();
+
+			if (pp6_get_clk_src() == CLK_SRC_INT) {
+				arp_count++;
+				period = rate * 200;
+				if ((arp_count > period) ) {
+					arp_tick = 1;
+					arp_count = 0;
+					if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(BLUE);
+					else pp6_set_clk_led(BLACK);
+					seq_tick();
+				}
+			}
+
+			if (pp6_get_clk_src() == CLK_SRC_MIDI){
+
+		        if ((rate * 1024) < 256) {
+		        	if ((!(pp6_get_midi_clock_count() % 3)) && (current_midi_clock != pp6_get_midi_clock_count())  ) {
+		            	arp_tick = 1;
+		            	current_midi_clock = pp6_get_midi_clock_count();
+		                if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(GREEN);
+		                else pp6_set_clk_led(BLACK);
+		                seq_tick();
+		            }
+		        }
+		        else if ((rate * 1024) < 512) {
+		        	if ((!(pp6_get_midi_clock_count() % 6)) && (current_midi_clock != pp6_get_midi_clock_count())  ) {
+		            	arp_tick = 1;
+		            	current_midi_clock = pp6_get_midi_clock_count();
+		                if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(GREEN);
+		                else pp6_set_clk_led(BLACK);
+		                seq_tick();
+		            }
+		        }
+		        else if ((rate * 1024) < 768) {
+		        	if ((!(pp6_get_midi_clock_count() % 8)) && (current_midi_clock != pp6_get_midi_clock_count())  ) {
+		            	arp_tick = 1;
+		            	current_midi_clock = pp6_get_midi_clock_count();
+		                if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(GREEN);
+		                else pp6_set_clk_led(BLACK);
+		                seq_tick();
+		            }
+		        }
+		        else if ((rate * 1024) < 1024) {
+		           if ((!(pp6_get_midi_clock_count() % 12)) && (current_midi_clock != pp6_get_midi_clock_count())  ) {
+		        	    current_midi_clock = pp6_get_midi_clock_count();
+		            	arp_tick = 1;
+
+		                if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(GREEN);
+		                else pp6_set_clk_led(BLACK);
+		                seq_tick();
+		            }
+		        }
+
 			}
 
 
@@ -410,6 +459,79 @@ int main(void)
 					oct_delta = 1;
 				}
 			} // mode 0
+
+
+			//?
+			if (pp6_get_mode() == 1){
+				note_list_copy_notes(&nl, &transformed);
+
+				if (nl.len > 0) { // if notes are down
+
+					if (arp_tick ) { // got an arp tick
+						arp_tick = 0;
+						if (transformed.index >= transformed.len){
+							transformed.index=0;
+							oct += oct_delta;
+							if (oct > 8) oct = 0;
+							//if (oct > ((int)(range * 6))){
+								//oct_delta = -1;
+							//}
+							if (oct == 0){
+								oct_delta = 1;
+							}
+						}
+						if (oct_delta == -1)
+							cents_target = (float32_t)(transformed.note_list[(transformed.len - 1) - transformed.index]  + (oct * 12)) * 100;
+						else
+							cents_target = (float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100;
+
+						play_note();
+						transformed.index++;
+					} // click
+				}
+				else {   // no notes down, reset arp
+					if (arp_tick ) arp_tick = 0; // keep this unchecked
+					transformed.index=0;
+					oct = 0;
+					oct_delta = 1;
+				}
+			} // mode 1
+			// UP with REVERSE DOWN
+			if (pp6_get_mode() == 2){
+				note_list_copy_notes(&nl, &transformed);
+
+				if (nl.len > 0) { // if notes are down
+
+					if (arp_tick ) { // got an arp tick
+						arp_tick = 0;
+						if (transformed.index >= transformed.len){
+							transformed.index=0;
+							oct += oct_delta;
+							if (oct > 8) oct = 0;
+							if (oct > ((int)(range * 6))){
+								oct_delta = -2;
+							}
+							if (oct == 0){
+								oct_delta = 2;
+							}
+						}
+						if (oct_delta == -1)
+							cents_target = (float32_t)(transformed.note_list[(transformed.len - 1) - transformed.index]  + (oct * 12)) * 100;
+						else
+							cents_target = (float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100;
+
+						play_note();
+						transformed.index++;
+					} // click
+				}
+				else {   // no notes down, reset arp
+					if (arp_tick ) arp_tick = 0; // keep this unchecked
+					transformed.index=0;
+					oct = 0;
+					oct_delta = 1;
+				}
+			} // mode 2
+
 
 			// gate goes low for 2 ms before going high (so we always have a note)
 			if (gate_reset){
@@ -492,9 +614,6 @@ void play_note(void){
 
 void adjust_f(void){
 
-
-
-
 	if (ABS(cents - cents_target) <= glide_step)  // if within 1 glide step
 		cents = cents_target;
 
@@ -504,9 +623,16 @@ void adjust_f(void){
 		cents -= glide_step;
 
 
-	v = cents / 1200.f;
-	pwm_set( (c_to_f_ratio(cents) * 10 ) * (tune * 2 + 1));
+	v = (cents + (tune * 2400.f)) / 1200.f;
+
+
+	if(pp6_get_gate())   // turn off pwm if note is over
+		pwm_set( c_to_f_ratio((cents + (tune * 2400.f))) * 10  );
+	else
+		pwm_set(0);
 }
+
+
 
 void flash_led_record_enable() {
 	if (led_counter > 150){

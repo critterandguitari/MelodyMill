@@ -71,6 +71,8 @@ void pp6_init(void) {
 
 	pp6.clock_source = CLK_SRC_INT;
 
+	pp6.gate_state = 0;
+
 	// init the note on arrays
 	for (i = 0; i < 128; i++) {
 		pp6.note_state[i] = 0;
@@ -87,11 +89,17 @@ void pp6_set_trig(uint32_t stat){
 }
 
 void pp6_set_gate(uint32_t stat){
+	pp6.gate_state = stat;
 	if (stat)
 		GPIO_WriteBit(GPIOD, GPIO_Pin_4, 1);
 	else
 		GPIO_WriteBit(GPIOD, GPIO_Pin_4, 0);
 }
+
+uint8_t pp6_get_gate(void){
+	return pp6.gate_state ;
+}
+
 
 uint8_t pp6_get_cv_clk(void){
 	if (!(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_6))) return 0;
@@ -127,6 +135,11 @@ void pp6_midi_clock_tick(void) {
 uint8_t pp6_get_midi_clock_tick(void) {
 	return pp6.midi_clock_flag;
 }
+
+uint8_t pp6_get_midi_clock_count(void) {
+	return pp6.midi_clock_tick_count;
+}
+
 void pp6_clear_midi_clock_tick(void){
 	pp6.midi_clock_flag = 0;
 }

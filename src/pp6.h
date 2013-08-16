@@ -76,6 +76,8 @@ typedef struct {
 	uint32_t keys_last;
 	uint8_t num_keys_down;
 
+	// gate state
+	uint8_t gate_state;
 
 	// current mode
 	uint32_t mode;
@@ -111,6 +113,8 @@ void pp6_init(void);
 
 void pp6_set_trig(uint32_t stat);
 void pp6_set_gate(uint32_t stat);
+
+uint8_t pp6_get_gate(void);
 uint8_t pp6_get_cv_clk(void);
 
 void pp6_enable_secret_mode(void);
@@ -200,6 +204,7 @@ uint8_t pp6_midi_clock_present(void);
 uint32_t pp6_get_midi_clock_period(void);
 uint8_t pp6_get_midi_clock_tick(void);
 void pp6_clear_midi_clock_tick(void);
+uint8_t pp6_get_midi_clock_count(void);
 
 // the note interface for the piano
 uint8_t pp6_note_on_flag();

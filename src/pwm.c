@@ -79,26 +79,28 @@ float32_t pwm_set(float32_t f) {
     uint32_t tmp;
 
 
+    if (f > 0){
+		/* Initialize clock - defined in system_stm32f2xx.h */
+		/* May not be needed */
+    	TIM_CtrlPWMOutputs(TIM1, ENABLE);
 
-    /* Initialize clock - defined in system_stm32f2xx.h */
-    /* May not be needed */
+		/* Compute the value for the ARR register to have a period of 20 KHz */
+		period = (1000000 / f ) - 1;
 
-    /* Compute the value for the ARR register to have a period of 20 KHz */
-    period = (1000000 / f ) - 1;
+		/* Compute the CCR1 value to generate a PWN signal with 50% duty cycle */
+		pulse = period / 2;
 
-    /* Compute the CCR1 value to generate a PWN signal with 50% duty cycle */
-    pulse = period / 2;
+		TIM1->ARR = period;
+		TIM1->CCR1 = pulse;
 
-
-
-
-
-    TIM1->ARR = period;
-    TIM1->CCR1 = pulse;
-
-    // for jumping to shorter periods, timer count could end up running away
-    if (TIM1->CNT >= period)
-    	TIM1->CNT = 0;
+		// for jumping to shorter periods, timer count could end up running away
+		if (TIM1->CNT >= period)
+			TIM1->CNT = 0;
+    }
+    else {
+        /* TIM1 Main Output disable for 0 freq */
+        TIM_CtrlPWMOutputs(TIM1, DISABLE);
+    }
 
     return f;
 
