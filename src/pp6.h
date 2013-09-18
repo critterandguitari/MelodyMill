@@ -44,6 +44,7 @@
 #define MAGENTA 6
 
 #define MIDI_CLOCK_TIMEOUT 20000  // around 1 second of not receiving midi clock
+#define CV_CLOCK_TIMEOUT 100000  // a few seconds
 
 
 typedef struct {
@@ -103,6 +104,9 @@ typedef struct {
 	uint32_t midi_clock_period;  // time in between midi clock ticks
 	uint8_t midi_clock_tick_count;
 	uint8_t midi_clock_flag;
+
+	// cv clock
+	uint8_t cv_clock_tick;
 
 	// Global clock
 	uint8_t clock_source;
@@ -220,6 +224,9 @@ void pp6_turn_off_all_on_notes(void);
 // Clock stuff
 uint8_t pp6_get_clk_src(void);
 void pp6_set_clk_src(uint8_t);
+
+void pp6_set_cv_clock_tick(void);
+uint8_t pp6_get_cv_clock_tick(void);
 
 
 #endif /* PP6_H_ */

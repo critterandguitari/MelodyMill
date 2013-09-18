@@ -66,6 +66,8 @@ void pp6_init(void) {
 	pp6.midi_in_clock_last = 0;
 	pp6.midi_clock_tick_count = 0;
 
+	pp6.cv_clock_tick = 0;
+
 	pp6.seq_led_flash = 0;
 	pp6.mode_led_flash = 0;
 
@@ -233,7 +235,7 @@ void pp6_change_mode(void){
 		if (pp6.mode == 7) pp6.mode = 0;
 	}
 	else {
-		if (pp6.mode == 6) pp6.mode = 0;
+		if (pp6.mode == 4) pp6.mode = 0;
 	}
 		pp6_set_mode_led(pp6.mode + 1);
 }
@@ -482,6 +484,7 @@ void pp6_clear_flags(void){
 
 	pp6.note_on_flag = 0;
 	pp6.note_off_flag = 0;
+	pp6.cv_clock_tick = 0;
 }
 
 uint8_t pp6_get_num_keys_down(void){
@@ -497,6 +500,16 @@ void pp6_dec_physical_notes_on(void){
 
 uint8_t pp6_get_physical_notes_on(void){
 	return pp6.physical_notes_on;
+}
+
+// CV clock stuff
+void pp6_set_cv_clock_tick(void){
+	pp6.cv_clock_tick = 1;
+
+}
+
+uint8_t pp6_get_cv_clock_tick(void){
+	return pp6.cv_clock_tick;
 }
 
 /**
