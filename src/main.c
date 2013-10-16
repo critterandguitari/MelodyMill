@@ -596,6 +596,50 @@ int main(void)
 				}
 			}
 
+			if (pp6_get_mode() == 4){
+				uint8_t tick_count;
+				note_list_copy_notes(&nl, &transformed);
+
+				if (nl.len > 0) { // if notes are down
+
+					if (arp_tick ) { // got an arp tick
+						arp_tick = 0;
+						tick_count++;
+						if (transformed.index >= transformed.len){
+							transformed.index=0;
+							oct += 1;
+							if (oct > ((int)(range * 6))){
+								oct = 0;
+							}
+						}
+
+//						cents_target = (float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100;
+						if (transformed.len = 1){
+							if (tick_count & 1)
+								cents_target = (float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100;
+							else
+								cents_target = (float32_t)(transformed.note_list[transformed.index]  ) * 100;
+						}
+						else {
+							if (transformed.index & 1)
+								cents_target = (float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100;
+							else
+								cents_target = (float32_t)(transformed.note_list[transformed.index]  ) * 100;
+						}
+
+
+						play_note();
+						transformed.index++;
+					} // click
+				}
+				else {   // no notes down, reset arp
+					if (arp_tick ) arp_tick = 0; // keep this unchecked
+					transformed.index=0;
+					oct = 0;
+					oct_delta = 1;
+				}
+			} // mode 4
+
 
 			// maintain the gate output
 			// gate goes low for 2 ms before going high (so we always have a note)
