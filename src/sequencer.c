@@ -8,9 +8,66 @@
 #include "pp6.h"
 #include "sequencer.h"
 
-static uint32_t seq_deltas[256];
-static uint32_t seq_notes[256];
-static uint32_t seq_events[256];
+static uint32_t seq_deltas[256]= {
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+};
+static uint32_t seq_notes[256]= {
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+};
+static uint32_t seq_events[256]= {
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+};
 static uint32_t seq_index = 0;
 static uint32_t seq_time = 0;
 static uint32_t seq_length = 0;
@@ -22,6 +79,21 @@ static uint8_t seq_knob_3_playback_enabled = 1;
 
 static uint8_t seq_auto_stop = 0;
 
+static uint32_t first_time_thru = 0;
+
+static uint8_t seq_notes_down_at_end[128] = {
+
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+};
+
 static float32_t knob_log [4096][3];   // 4096 logs of the pot at SR / 32 / 16
 
 
@@ -30,6 +102,27 @@ uint8_t seq_ready_for_recording(void){
 		return 1;
 	else
 		return 0;
+}
+
+// allow for drone
+uint8_t seq_check_if_note_was_on_at_end_of_sequence(uint8_t note){
+
+	uint16_t i=0;
+	uint8_t beg = 0;
+	uint8_t end = 0;
+
+	// aslso check if it was down at beginng
+	for (i = 0; i<256; i++){
+		if (seq_deltas[i] == 0){
+			if (seq_notes[i] == note)
+				beg = 1;
+		}
+	}
+
+	if (seq_notes_down_at_end[note]){
+		end = 1;
+	}
+	return beg & end;
 }
 
 void seq_set_status(uint8_t stat) {
@@ -85,7 +178,23 @@ void seq_log_events(void) {
 	//seq_log_knobs(pp6_get_knob_array());
 }
 
+// to log the first notes
+void seq_log_first_notes(void) {
+	uint8_t i;
+	for (i = 0; i < 128; i++) {
+		if (pp6_get_note_state(i)) {
+			seq_log_note_start(i);
+		}
+	}
+}
+
 void seq_stop_recording(void) {
+
+	uint8_t i;
+
+	for (i = 0; i < 128; i++) {
+		seq_notes_down_at_end[i] = pp6_get_note_state(i);
+	}
 
 	// if a midi clock is present, quantize length to nearest quater note
 	if (pp6_midi_clock_present() ) {
@@ -110,6 +219,7 @@ void seq_stop_recording(void) {
 	seq_time = 0;
 	seq_playback_knobs_enabled = 1;  // enable playback of knobs
 	pp6_turn_off_all_on_notes();
+	first_time_thru = 1;
 }
 
 void seq_rewind(void) {
@@ -142,10 +252,10 @@ void seq_play_tick (void){
 
 	while (seq_time >= seq_deltas[seq_index]){
 		if (seq_events[seq_index] == SEQ_NOTE_START){
-			// a physical note down will mute sequence
-			if (!pp6_get_physical_notes_on()){
+			// a physical note down will mute sequence, or not
+		//	if (!pp6_get_physical_notes_on()){
 				pp6_set_note_on(seq_notes[seq_index]);
-			}
+		//	}
 		}
 		if (seq_events[seq_index] == SEQ_NOTE_STOP){
 			// stop it, but only if its sounding (its note on might have been muted)
@@ -156,12 +266,17 @@ void seq_play_tick (void){
 		if (seq_index > seq_length){
 			seq_index = 0;
 			seq_time = 0;
-			pp6_turn_off_all_on_notes();// end all notes still playing at end of loop
+			//pp6_turn_off_all_on_notes();// end all notes still playing at end of loop
+			first_time_thru = 0;
 			break;
 		}
 	}
 
 
+}
+
+uint32_t seq_get_first_time_thru(void){
+	return first_time_thru;
 }
 
 void seq_tick(void){

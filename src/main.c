@@ -47,6 +47,7 @@ static uint32_t led_counter = 0;  // for the above flash function
 static uint8_t aux_led_color = BLACK;
 
 // pocket piano object  TODO:  the whole point is  this should not be here as extern ?  use getters setters
+//  NO ,  getters and setters are dumb if there is only one of these, just have a global object is fine
 extern pocket_piano pp6;
 
 // from DAC in CS4344.c driver
@@ -193,6 +194,8 @@ int main(void)
 			dur = pp6_get_knob_3();
 
 			// check for new key events
+			// ignore notes the first time thru the sequence
+
 			pp6_get_key_events();
 
 			if (pp6_mode_button_pressed()){
@@ -239,6 +242,7 @@ int main(void)
 			//			// BEGIN SEQUENCER
 			// sequencer states
 			// TODO add HOLDING state
+			seq_tick();
 			if (seq_get_status() == SEQ_STOPPED){
 
 				pp6_set_seq_led(BLACK);
@@ -246,6 +250,7 @@ int main(void)
 				// aux button gets pressed and held
 				if ( !pp6_get_physical_notes_on() ) {  // only if there are not notes held down, and a hold is not already set
 
+					// record enable
 					if ( (!(( pp6_get_keys() >> 17) & 1)) ) {
 						aux_button_depress_time++;
 						if (aux_button_depress_time > 500){
@@ -257,7 +262,7 @@ int main(void)
 					if (pp6_aux_button_pressed() || pp6_get_midi_start()) {
 						if (seq_get_length()) {  // only play if positive length
 
-							// TODO :: ?? can't have this in here  (atleast have a reset_arps() function)
+							// TODO :: ?? can't have this in here  (at least have a reset_arps() function)
 							//RESET ARPS
 							transformed.index=0;
 							oct = 0;
@@ -283,6 +288,14 @@ int main(void)
 				if (pp6_aux_button_pressed()) {
 					seq_set_status(SEQ_STOPPED);
 				}
+				// record enable
+				if ( (!(( pp6_get_keys() >> 17) & 1)) ) {
+					aux_button_depress_time++;
+					if (aux_button_depress_time > 500){
+						aux_button_depress_time = 0;
+						seq_set_status(SEQ_RECORD_ENABLE);
+					}
+				}
 			}
 			else if (seq_get_status() == SEQ_RECORD_ENABLE){
 				flash_led_record_enable();
@@ -292,7 +305,7 @@ int main(void)
 				if (pp6_note_on_flag()){
 					seq_set_status(SEQ_RECORDING);
 					seq_start_recording();
-					seq_log_events();
+					seq_log_first_notes();
 					seq_log_knobs(pp6_get_knob_array());
 					sendStart();  // send out a midi start
 				}
@@ -444,7 +457,7 @@ int main(void)
 					//seq_tick();
 				}
 			}
-			seq_tick();
+
 			// END CLOCK TICKER
 
 			// END SEQUENCER
@@ -465,10 +478,10 @@ int main(void)
 				for (i = 0; i < 128; i++) {
 					if (pp6_get_note_state(i) != pp6_get_note_state_last(i)) {
 						if (pp6_get_note_state(i)) {
-							note_list_note_on(&nl, i);
+								note_list_note_on(&nl, i);
 						}
 						else {
-							note_list_note_off(&nl, i);
+								note_list_note_off(&nl, i);
 						}
 					}
 				}

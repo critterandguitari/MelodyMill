@@ -33,6 +33,7 @@ uint8_t seq_get_status(void);
 void seq_log_events(void);
 void seq_start_recording(void);
 void seq_log_first_note(uint8_t note);
+void seq_log_first_notes(void) ;
 void seq_log_first_note_null(void);
 
 void seq_log_note_start(uint8_t note);
@@ -43,6 +44,10 @@ void seq_rewind(void) ;
 
 void seq_play_tick (void);
 void seq_tick(void);
+
+uint32_t seq_get_first_time_thru(void);
+
+uint8_t seq_check_if_note_was_on_at_end_of_sequence(uint8_t note);
 
 uint32_t seq_get_time(void);
 

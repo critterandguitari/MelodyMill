@@ -35,7 +35,8 @@ src/pp6.d: ../src/pp6.c \
  ../src/pp6.h \
  /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/inc/arm_math.h \
  /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/inc/arm/arm_math.h \
- /home/owen/workspace-rs5/CMSISv2p10_STM32F4xx/inc/core_cm4.h
+ /home/owen/workspace-rs5/CMSISv2p10_STM32F4xx/inc/core_cm4.h \
+ ../src/sequencer.h
 
 /home/owen/workspace-rs5/CMSISv2p10_STM32F4xx/inc/stm32f4xx.h:
 
@@ -110,3 +111,5 @@ src/pp6.d: ../src/pp6.c \
 /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/inc/arm/arm_math.h:
 
 /home/owen/workspace-rs5/CMSISv2p10_STM32F4xx/inc/core_cm4.h:
+
+../src/sequencer.h:

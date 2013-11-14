@@ -10,7 +10,7 @@
 #include "stm32f4xx.h"
 #endif
 #include "pp6.h"
-
+#include "sequencer.h"
 
 #define ABS(a)	   (((a) < 0) ? -(a) : (a))
 
@@ -399,9 +399,11 @@ uint8_t pp6_note_off_flag() {
 }
 
 void pp6_set_note_off(uint8_t note){
-	pp6.note_state[note & 0x7f] = 0;
-	pp6.note_off = note;
-	pp6.note_off_flag = 1;
+	if (!seq_check_if_note_was_on_at_end_of_sequence(note)) {
+		pp6.note_state[note & 0x7f] = 0;
+		pp6.note_off = note;
+		pp6.note_off_flag = 1;
+	}
 }
 void pp6_set_note_on(uint8_t note){
 	pp6.note_state[note & 0x7f] = 1;
