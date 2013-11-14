@@ -75,10 +75,15 @@ void pp6_init(void) {
 
 	pp6.gate_state = 0;
 
+	pp6.keyboard_note_on_flag = 0;
+
 	// init the note on arrays
 	for (i = 0; i < 128; i++) {
 		pp6.note_state[i] = 0;
 		pp6.note_state_last[i] = 0;
+
+		pp6.keyboard_note_state[i] = 0;
+		pp6.keyboard_note_state_last[i] = 0;
 	}
 }
 
@@ -364,11 +369,11 @@ void pp6_get_key_events(void) {
 			pp6.num_keys_down++;
 		}
 		if ( (!((k>>i) & 1)) &&  (((k_last>>i) & 1))  )  {  // new key down
-			pp6_set_note_on(i + 36);   // keyboard starts at midi note 36
+			pp6_set_keyboard_note_on(i + 36);   // keyboard starts at midi note 36
 			pp6_inc_physical_notes_on();
 		}
 		if ( ((k>>i) & 1) &&  (!((k_last>>i) & 1))  )  {  // key up
-			pp6_set_note_off(i + 36);   // keyboard starts at midi note 36
+			pp6_set_keyboard_note_off(i + 36);   // keyboard starts at midi note 36
 			pp6_dec_physical_notes_on();
 		}
 	}
@@ -398,18 +403,43 @@ uint8_t pp6_note_off_flag() {
 	return pp6.note_off_flag;
 }
 
+uint8_t pp6_keyboard_note_on_flag() {
+	return pp6.keyboard_note_on_flag;
+}
+
 void pp6_set_note_off(uint8_t note){
-	if (!seq_check_if_note_was_on_at_end_of_sequence(note)) {
 		pp6.note_state[note & 0x7f] = 0;
 		pp6.note_off = note;
 		pp6.note_off_flag = 1;
-	}
 }
 void pp6_set_note_on(uint8_t note){
 	pp6.note_state[note & 0x7f] = 1;
 	pp6.note_on = note;
 	pp6.note_on_flag = 1;
 }
+
+void pp6_set_keyboard_note_off(uint8_t note){
+		pp6.keyboard_note_state[note & 0x7f] = 0;
+}
+void pp6_set_keyboard_note_on(uint8_t note){
+	pp6.keyboard_note_state[note & 0x7f] = 1;
+	pp6.keyboard_note_on_flag = 1;
+}
+uint8_t pp6_get_keyboard_note_state(uint8_t note){
+	return pp6.keyboard_note_state[note & 0x7f];
+}
+uint8_t pp6_get_keyboard_note_state_last(uint8_t note){
+	return pp6.keyboard_note_state_last[note & 0x7f];
+}
+
+
+void pp6_set_current_keyboard_note_state_to_last(void){
+	uint8_t i;
+	for (i = 0; i < 128; i++){
+		pp6.keyboard_note_state_last[i] = pp6.keyboard_note_state[i];
+	}
+}
+
 uint8_t pp6_get_note_state(uint8_t note){
 	return pp6.note_state[note & 0x7f];
 }
@@ -484,6 +514,7 @@ void pp6_clear_flags(void){
 	pp6.midi_stop_flag = 0;
 	pp6.midi_clock_flag = 0;
 
+	pp6.keyboard_note_on_flag = 0;
 	pp6.note_on_flag = 0;
 	pp6.note_off_flag = 0;
 	pp6.cv_clock_tick = 0;

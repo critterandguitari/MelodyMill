@@ -69,6 +69,9 @@ uint8_t trig_time = 0;
 
 uint8_t current_midi_clock = 0;
 
+uint8_t last_midi_note = 0;
+uint8_t current_midi_note = 0;
+
 int main(void)
 {
 
@@ -131,6 +134,8 @@ int main(void)
 	pwm_set(100);
 //	pwm_test();
 	midi_init(1);
+
+	seq_init();
 
 	note_list_init(&nl);
 	note_list_init(&transformed);
@@ -302,7 +307,7 @@ int main(void)
 				if (pp6_aux_button_pressed()) {
 					seq_set_status(SEQ_STOPPED);
 				}
-				if (pp6_note_on_flag()){
+				if (pp6_keyboard_note_on_flag()){
 					seq_set_status(SEQ_RECORDING);
 					seq_start_recording();
 					seq_log_first_notes();
@@ -364,20 +369,17 @@ int main(void)
 					if (aux_button_depress_time > 500){
 						aux_button_depress_time = 0;
 						seq_set_status(SEQ_RECORD_ENABLE);
-						pp6_set_synth_note_stop();  // stop the synth
-						pp6_turn_off_all_on_notes();
+						seq_set_all_notes_off();
 					}
 				}
 				// aux button swithes to stop
 				if (pp6_aux_button_pressed() || pp6_get_midi_stop()) {
 					seq_set_status(SEQ_STOPPED);
 					aux_button_depress_time = 0;
-					pp6_set_synth_note_stop();   // stop the synth
-					pp6_turn_off_all_on_notes();
+					seq_set_all_notes_off();
 					sendStop();  // send MIDI stop
 				}
 			}
-
 
 			// CLOCK TICKER
 	        // tick the sequencer with midi clock if it is present, otherwise use internal
@@ -462,6 +464,15 @@ int main(void)
 
 			// END SEQUENCER
 
+			// copy keyboard notes to notes
+			for (i=0; i<128; i++){
+
+				if (pp6_get_keyboard_note_state(i) || seq_get_note_state(i))
+					pp6_set_note_on(i);
+				else
+					pp6_set_note_off(i);
+			}
+			pp6_set_current_keyboard_note_state_to_last();
 
 			// check for a new key press that releases hold condition
 			if (seq_get_status() == SEQ_HOLDING ){
@@ -505,7 +516,10 @@ int main(void)
 				}
 				if (!nl.len) {   // turn gate off if no notes are being held
 					pp6_set_gate(0);
+					if (current_note) // only do this once
+						sendNoteOff(1, last_midi_note, 0);
 					current_note = 0;
+
 				}
 			} // mode 0
 
@@ -627,7 +641,7 @@ int main(void)
 						}
 
 //						cents_target = (float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100;
-						if (transformed.len = 1){
+						if (transformed.len == 1){
 							if (tick_count & 1)
 								cents_target = (float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100;
 							else
@@ -661,6 +675,7 @@ int main(void)
 				if (gate_reset){
 					gate_reset--;
 					pp6_set_gate(0);
+					// send the midi note off
 
 				}
 				else {  // after gate has been low for a couple ms, bring it high for the specified dur, but only for arp modes
@@ -668,6 +683,8 @@ int main(void)
 					if(gate_time) {
 						gate_time--;
 						pp6_set_gate(1);
+						if (!gate_time)  //only send it out once
+							sendNoteOff(1, last_midi_note, 0);
 					}
 					else {
 						pp6_set_gate(0);
@@ -741,6 +758,13 @@ void play_note(void){
 
 	glide_step = ABS(cents - cents_target) / (glide * 10000);   // determine slope for fix time glide
 
+	current_midi_note = (uint8_t)(cents_target / 100);
+	if (pp6_get_mode() == 0) {
+		sendNoteOff(1, last_midi_note, 100);
+	}
+	sendNoteOn(1, current_midi_note, 100);
+	last_midi_note = current_midi_note;
+
 }
 
 void adjust_f(void){
@@ -768,11 +792,7 @@ void adjust_f(void){
 		else
 			pwm_set(0);
 	}
-
-
 }
-
-
 
 void flash_led_record_enable() {
 	if (led_counter > 150){
@@ -785,8 +805,6 @@ void flash_led_record_enable() {
 		}
 	}
 }
-
-
 
 /*
 filter_man_control_process(){

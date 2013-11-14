@@ -25,10 +25,18 @@
 
 uint8_t seq_ready_for_recording(void);
 
+void seq_init(void);
 
 void seq_set_status(uint8_t stat) ;
 
 uint8_t seq_get_status(void);
+
+void seq_set_note_off(uint8_t note);
+void seq_set_note_on(uint8_t note);
+
+uint8_t seq_get_note_state(uint8_t note);
+
+void seq_set_all_notes_off(void);
 
 void seq_log_events(void);
 void seq_start_recording(void);
