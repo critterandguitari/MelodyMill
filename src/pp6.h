@@ -64,11 +64,7 @@ typedef struct {
 
 
 	// both the built in keyboard and midi input generate these events
-	uint8_t note_on_flag;		// note on flag (MIDI or keyboard)
-	uint8_t note_off_flag; 		// note off flag
-	uint8_t note_on;			// used in conjunction with the on and off flags to store recieved event (from keyboard or MIDI)
-	uint8_t note_off;
-	uint8_t physical_notes_on;    // the number of non sequenced notes currently on
+	uint8_t num_keyboard_notes_on;    // the number of non sequenced notes currently on
 
 	uint8_t note_state[128];	  // state of all the notes (keyboard + sequencer) -- 0 for off, anything else for on
 	uint8_t note_state_last[128]; // the previos time thru the main loop that notes were updated.  compared with above to get note events
@@ -197,9 +193,7 @@ void pp6_set_aux_button_released(void);
 uint8_t pp6_aux_button_pressed(void);
 uint8_t pp6_aux_button_released(void);
 
-void pp6_inc_physical_notes_on(void);
-void pp6_dec_physical_notes_on(void);
-uint8_t pp6_get_physical_notes_on(void);
+uint8_t pp6_get_keyboard_notes_on(void);
 
 // midi start stop events
 void pp6_set_midi_start(void);
@@ -217,8 +211,6 @@ void pp6_clear_midi_clock_tick(void);
 uint8_t pp6_get_midi_clock_count(void);
 
 // the note interface for the piano
-uint8_t pp6_note_on_flag();
-uint8_t pp6_note_off_flag();
 void pp6_set_note_off(uint8_t note);
 void pp6_set_note_on(uint8_t note);
 uint8_t pp6_get_note_state(uint8_t note);

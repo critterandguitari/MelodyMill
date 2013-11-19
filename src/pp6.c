@@ -11,6 +11,7 @@
 #endif
 #include "pp6.h"
 #include "sequencer.h"
+#include "timer.h"
 
 #define ABS(a)	   (((a) < 0) ? -(a) : (a))
 
@@ -46,6 +47,22 @@ void pp6_init(void) {
 	pp6_knobs_init();
 	pp6_init_digi_in();
 
+	timer_init();
+
+	timer_reset();while( timer_get_time() < 1000000){};
+	pp6_set_seq_led(RED);
+	pp6_set_mode_led(RED);
+	pp6_set_clk_led(RED);
+	timer_reset();while( timer_get_time() < 1000000){};
+	pp6_set_seq_led(GREEN);
+	pp6_set_mode_led(GREEN);
+	pp6_set_clk_led(GREEN);
+	timer_reset();while( timer_get_time() < 1000000){};
+	pp6_set_seq_led(BLUE);
+	pp6_set_mode_led(BLUE);
+	pp6_set_clk_led(BLUE);
+	timer_reset();while( timer_get_time() < 1000000){};
+
 	pp6_set_mode_led(BLACK);
 
 	pp6_set_mode(0);
@@ -55,7 +72,7 @@ void pp6_init(void) {
 	pp6.knob_touched[0] = 0;
 	pp6.knob_touched[1] = 0;
 	pp6.knob_touched[2] = 0;
-	pp6.physical_notes_on = 0;
+	pp6.num_keyboard_notes_on = 0;
 	pp6.midi_start_flag = 0;
 	pp6.midi_stop_flag = 0;
 	pp6.keys =  0xFFFFFFFF;
@@ -370,11 +387,9 @@ void pp6_get_key_events(void) {
 		}
 		if ( (!((k>>i) & 1)) &&  (((k_last>>i) & 1))  )  {  // new key down
 			pp6_set_keyboard_note_on(i + 36);   // keyboard starts at midi note 36
-			pp6_inc_physical_notes_on();
 		}
 		if ( ((k>>i) & 1) &&  (!((k_last>>i) & 1))  )  {  // key up
 			pp6_set_keyboard_note_off(i + 36);   // keyboard starts at midi note 36
-			pp6_dec_physical_notes_on();
 		}
 	}
 
@@ -394,14 +409,6 @@ void pp6_get_key_events(void) {
 }
 
 // the note interface for the piano
-// TODO :  WHAT THE HELL ARE ALL THESE ?????  CLEAN IT UP
-// TODO :  ahhh, what if more then one key is pressed at same time ??, set_note_on can only handle 1 note per 'tick'
-uint8_t pp6_note_on_flag() {
-	return pp6.note_on_flag;
-}
-uint8_t pp6_note_off_flag() {
-	return pp6.note_off_flag;
-}
 
 uint8_t pp6_keyboard_note_on_flag() {
 	return pp6.keyboard_note_on_flag;
@@ -409,13 +416,9 @@ uint8_t pp6_keyboard_note_on_flag() {
 
 void pp6_set_note_off(uint8_t note){
 		pp6.note_state[note & 0x7f] = 0;
-		pp6.note_off = note;
-		pp6.note_off_flag = 1;
 }
 void pp6_set_note_on(uint8_t note){
 	pp6.note_state[note & 0x7f] = 1;
-	pp6.note_on = note;
-	pp6.note_on_flag = 1;
 }
 
 void pp6_set_keyboard_note_off(uint8_t note){
@@ -515,8 +518,6 @@ void pp6_clear_flags(void){
 	pp6.midi_clock_flag = 0;
 
 	pp6.keyboard_note_on_flag = 0;
-	pp6.note_on_flag = 0;
-	pp6.note_off_flag = 0;
 	pp6.cv_clock_tick = 0;
 }
 
@@ -524,15 +525,15 @@ uint8_t pp6_get_num_keys_down(void){
 	return pp6.num_keys_down;
 }
 
-void pp6_inc_physical_notes_on(void){
-	pp6.physical_notes_on++;
-}
-void pp6_dec_physical_notes_on(void){
-	if (pp6.physical_notes_on) pp6.physical_notes_on--;   // check it is positive in case it turns on while a key is pressed or during midi note
-}
-
-uint8_t pp6_get_physical_notes_on(void){
-	return pp6.physical_notes_on;
+uint8_t pp6_get_keyboard_notes_on(void){
+	uint8_t i;
+	pp6.num_keyboard_notes_on = 0;
+	for (i = 0; i< 128; i++){
+		if (pp6.keyboard_note_state[i]){
+			pp6.num_keyboard_notes_on += 1;
+		}
+	}
+	return pp6.num_keyboard_notes_on;
 }
 
 // CV clock stuff

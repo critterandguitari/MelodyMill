@@ -34,24 +34,15 @@ extern unsigned int hardware_index;
 extern short play_buf[];
 extern uint32_t sample_clock;
 
-// for keeping track of time
-static uint32_t sample_clock_last = 0;
-
-static void Delay(__IO uint32_t nCount);
-static void flash_led_record_enable(void);
-static void play_note(void);
-static void adjust_f(void);
-
-// led stuff
-static uint32_t led_counter = 0;  // for the above flash function
-static uint8_t aux_led_color = BLACK;
-
-// pocket piano object  TODO:  the whole point is  this should not be here as extern ?  use getters setters
-//  NO ,  getters and setters are dumb if there is only one of these, just have a global object is fine
+// pocket piano object
 extern pocket_piano pp6;
 
-// from DAC in CS4344.c driver
-extern uint32_t sample_clock;
+// for keeping track of time
+uint32_t sample_clock_last = 0;
+
+// led stuff
+uint32_t led_counter = 0;  // for the flash function
+uint8_t aux_led_color = BLACK;
 
 // MIDI buffer
 uint8_t  uart_recv_buf[32];
@@ -59,56 +50,84 @@ uint8_t  uart_recv_buf_write = 0;
 uint8_t  uart_recv_buf_read = 0;
 uint8_t tmp8;
 
+// params from knobs
+float32_t rate, range, tune, glide, dur;
+
+// not gen
 uint32_t gate_time = 0;
 uint32_t gate_reset = 0;
 float32_t v, cents, cents_target;
-float32_t rate, range, tune, glide, dur;
 float32_t glide_step;
-
 uint8_t trig_time = 0;
 
+// holds notes that get manipulated by arp modes
+note_list nl;
+note_list transformed;
+
+// midi clock
 uint8_t current_midi_clock = 0;
 
+// for keeping track of midi output
 uint8_t last_midi_note = 0;
 uint8_t current_midi_note = 0;
+
+// used for arp  modes
+uint32_t period = 0;
+uint32_t arp_count = 0;
+uint32_t arp_tick = 0;
+uint8_t current_note = 0;
+int8_t oct = 0;
+int8_t oct_delta;
+
+// CV timing and detection
+uint8_t cv_clock_state_history[2] = {0, 0};
+uint8_t cv_clock_state_history_index = 0;
+uint8_t cv_clock_state = 0;
+uint8_t cv_clock_state_last = 0;
+uint32_t cv_clock_period = CV_CLOCK_TIMEOUT + 1; // to make sure it starts off
+uint32_t cv_clock_last_tick = 0;
+
+// wether or not the instrument is in tuning mode
+uint8_t tuning_mode = 0;
+
+// general
+uint32_t i;
+uint16_t s;
+
+// used to determine hold condition
+uint32_t aux_button_depress_time = 0;
+
+static void Delay(__IO uint32_t nCount);
+static void flash_led_record_enable(void);
+static void play_note(void);
+static void adjust_f(void);
+static void run_sequencer(void);
+static void check_cv_clock(void);
+static void determine_clock_source(void);
+
+// ticks the arp by setting a flag.  uses the selected clock source
+static void run_arp_ticks(void);
+
+// just ticks at full speed (used for mode 0 single shot)
+static void run_arp_ticks_full_speed(void);
+
+// copy notes from keyboard and sequencer into the master note
+// state array, performing a logical OR on note state so that
+// the sequencer will never turn off a key being held down and vice versa
+static void combine_keyboard_and_sequencer_notes(void);
+
+static void check_for_hold_release(void);
+static void update_note_list(void);
 
 int main(void)
 {
 
-	uint8_t i;
-
-	uint32_t period = 0;
-	uint32_t arp_count = 0;
-	uint32_t arp_tick = 0;
-	uint8_t current_note = 0;
-
-
-	int8_t oct = 0;
-	int8_t oct_delta;
-
-	note_list nl;
-
-	note_list transformed;
-
-	uint8_t cv_clock_state_history[2] = {0, 0};
-	uint8_t cv_clock_state_history_index = 0;
-	uint8_t cv_clock_state = 0;
-	uint8_t cv_clock_state_last = 0;
-	uint32_t cv_clock_period = CV_CLOCK_TIMEOUT + 1; // to make sure it starts off
-	uint32_t cv_clock_last_tick = 0;
-
-
-
-	uint16_t s;
 
 	rate = range = tune = glide = dur = 0;
-
-	uint32_t aux_button_depress_time = 0;
-
 	v = 0;
 
-	Delay(20000);
-	 // enable random number generator
+
+	// enable random number generator
 	RCC_AHB2PeriphClockCmd(RCC_AHB2Periph_RNG, ENABLE);
 	RNG_Cmd(ENABLE);
 
@@ -132,20 +151,27 @@ int main(void)
 
 	pwm_init();
 	pwm_set(100);
-//	pwm_test();
+	//	pwm_test();
 	midi_init(1);
 
 	seq_init();
 
+	// zero out note lists
 	note_list_init(&nl);
 	note_list_init(&transformed);
 
-	transformed.len = 1;
-	transformed.note_list[0] = 60;
+	// get initial buttons
+	// update keys has to be called > 8 times for key press to be debounced
+	for (i = 0; i < 9; i++)
+		pp6_keys_update();
+
+	if (!((pp6_get_keys() >> 17) & 1))
+		tuning_mode = 1;
+	else
+		tuning_mode = 0;
 
 
-	//pp6_knobs_init();
-	// go!
+	// main loop
 	while (1)	{
 
 	    /* Update WWDG counter */
@@ -161,9 +187,19 @@ int main(void)
 		    	sendSync();
 	    	}
 
+
+
 	        uart_recv_buf_write++;
 	        uart_recv_buf_write &= 0x1f;  // 32 bytes
 	    }
+
+        // process MIDI, pp6 will be updated from midi.c handlers if there are any relevant midi events
+        if (uart_recv_buf_read != uart_recv_buf_write){
+            tmp8 = uart_recv_buf[uart_recv_buf_read];
+            uart_recv_buf_read++;
+            uart_recv_buf_read &= 0x1f;
+            recvByte(tmp8);
+        }
 
         // empty the tx buffer
         uart_service_tx_buf();
@@ -171,18 +207,33 @@ int main(void)
 		/*
 		 * Control Rate, 64 sample periods
 		 */
-		if ((!(sample_clock & 0x3F)) && (sample_clock != sample_clock_last)){
+        // tuning mode
+        if ( ((!(sample_clock & 0x3F)) && (sample_clock != sample_clock_last)) && tuning_mode ){
+			// make sure this only happens once every 64 sample periods
+			sample_clock_last = sample_clock;
+
+
+			if ((sample_clock >> 10) & 1){
+				v = 10.f;
+				pp6_set_seq_led(7);
+				pp6_set_mode_led(7);
+				pp6_set_clk_led(7);
+			}
+			else {
+				v = 10;
+				pp6_set_seq_led(0);
+				pp6_set_mode_led(0);
+				pp6_set_clk_led(0);
+			}
+        }
+
+        // MAIN CONTROL LOOP, 64 SAMPLE PERIODS
+		if ( ((!(sample_clock & 0x3F)) && (sample_clock != sample_clock_last)) && !tuning_mode ){
 
 			// make sure this only happens once every 64 sample periods
 			sample_clock_last = sample_clock;
 
-	        // process MIDI, pp6 will be updated from midi.c handlers if there are any relevant midi events
-	        if (uart_recv_buf_read != uart_recv_buf_write){
-	            tmp8 = uart_recv_buf[uart_recv_buf_read];
-	            uart_recv_buf_read++;
-	            uart_recv_buf_read &= 0x1f;
-	            recvByte(tmp8);
-	        }
+
 
 	        // midi clock auto detection
 	        pp6_check_for_midi_clock();
@@ -199,10 +250,9 @@ int main(void)
 			dur = pp6_get_knob_3();
 
 			// check for new key events
-			// ignore notes the first time thru the sequence
-
 			pp6_get_key_events();
 
+			// check for mode  change
 			if (pp6_mode_button_pressed()){
 				pp6_change_mode();
 			}
@@ -210,296 +260,39 @@ int main(void)
 			// maintain LED flasher
 			pp6_flash_update();
 
-			// check for CV clock
-			cv_clock_state_history[cv_clock_state_history_index] = pp6_get_cv_clk();
-			cv_clock_state_history_index++;
-			cv_clock_state_history_index &= 1;
+			// read cv clock input, issue tick, and time its period
+			check_cv_clock();
 
-			if(cv_clock_state_history[0] == cv_clock_state_history[1]) {
-				cv_clock_state = cv_clock_state_history[0];
-			}
-			if (cv_clock_state != cv_clock_state_last){
-				cv_clock_state_last = cv_clock_state;
+			// determine what the clock source will be for arps: cv, midi, or internal
+			determine_clock_source();
 
+			// now that we have checked for keyboard events (from internal keys and midi above), run  sequencer
+			run_sequencer();
 
-				cv_clock_last_tick = sample_clock;
-
-				pp6_set_cv_clock_tick();
-
-			}
-			// determine cv clock period, cv gets precedance
-			cv_clock_period = sample_clock - cv_clock_last_tick;
-
-			if (cv_clock_period < CV_CLOCK_TIMEOUT) pp6_set_clk_src(CLK_SRC_CV);
-			else {
-				// determine clock source
-					if (pp6_midi_clock_present()){
-						pp6_set_clk_src(CLK_SRC_MIDI);
-					}
-					if (!pp6_midi_clock_present()){
-						pp6_set_clk_src(CLK_SRC_INT);
-					}
-			}
-
-
-
-			// SEQUENCER GOES HERE
-			//			// BEGIN SEQUENCER
-			// sequencer states
-			// TODO add HOLDING state
-			seq_tick();
-			if (seq_get_status() == SEQ_STOPPED){
-
-				pp6_set_seq_led(BLACK);
-
-				// aux button gets pressed and held
-				if ( !pp6_get_physical_notes_on() ) {  // only if there are not notes held down, and a hold is not already set
-
-					// record enable
-					if ( (!(( pp6_get_keys() >> 17) & 1)) ) {
-						aux_button_depress_time++;
-						if (aux_button_depress_time > 500){
-							aux_button_depress_time = 0;
-							seq_set_status(SEQ_RECORD_ENABLE);
-						}
-					}
-
-					if (pp6_aux_button_pressed() || pp6_get_midi_start()) {
-						if (seq_get_length()) {  // only play if positive length
-
-							// TODO :: ?? can't have this in here  (at least have a reset_arps() function)
-							//RESET ARPS
-							transformed.index=0;
-							oct = 0;
-							oct_delta = 1;
-
-							seq_enable_knob_playback();
-							seq_set_status(SEQ_PLAYING);
-							sendStart();  // send out a midi start
-						}
-						else seq_set_status(SEQ_STOPPED);
-						seq_rewind();
-						aux_button_depress_time = 0;
-					}
-				}
-				else {  // check for hold condition
-					if (pp6_aux_button_pressed()) {
-						seq_set_status(SEQ_HOLDING);
-					}
-				}
-			}
-			else if (seq_get_status() == SEQ_HOLDING){
-				pp6_set_seq_led(MAGENTA);
-				if (pp6_aux_button_pressed()) {
-					seq_set_status(SEQ_STOPPED);
-				}
-				// record enable
-				if ( (!(( pp6_get_keys() >> 17) & 1)) ) {
-					aux_button_depress_time++;
-					if (aux_button_depress_time > 500){
-						aux_button_depress_time = 0;
-						seq_set_status(SEQ_RECORD_ENABLE);
-					}
-				}
-			}
-			else if (seq_get_status() == SEQ_RECORD_ENABLE){
-				flash_led_record_enable();
-				if (pp6_aux_button_pressed()) {
-					seq_set_status(SEQ_STOPPED);
-				}
-				if (pp6_keyboard_note_on_flag()){
-					seq_set_status(SEQ_RECORDING);
-					seq_start_recording();
-					seq_log_first_notes();
-					seq_log_knobs(pp6_get_knob_array());
-					sendStart();  // send out a midi start
-				}
-				if (pp6_get_midi_start()) {
-					seq_set_status(SEQ_RECORDING);
-					seq_start_recording();
-					seq_log_first_note_null();   // sequence doesn't start with a note
-					sendStart();  // send out a midi start
-				}
-			}
-			else if (seq_get_status() == SEQ_RECORDING){
-
-				pp6_set_seq_led(RED);
-
-
-				seq_log_events();
-
-				// stop recording
-				if (pp6_aux_button_pressed() || seq_get_auto_stop()) {
-					seq_stop_recording();
-					seq_set_status(SEQ_PLAYING);
-					seq_enable_knob_playback();
-					aux_button_depress_time = 0;
-					seq_clear_auto_stop();
-					sendStop();  // send MIDI stop
-
-					// TODO :: ?? can't have this in here  (atleast have a reset_arps() function)
-					//RESET ARPS
-					transformed.index=0;
-					oct = 0;
-					oct_delta = 1;
-				}
-				if (pp6_get_midi_stop()) {   // if a midi stop is received, stop recording, and dont play
-					seq_stop_recording();
-					seq_set_status(SEQ_STOPPED);
-					aux_button_depress_time = 0;
-					seq_clear_auto_stop();
-					sendStop();  // send MIDI stop
-				}
-
-			}
-			else if (seq_get_status() == SEQ_PLAYING) {
-
-				seq_play_knobs();  	// play knobs
-				seq_play_tick();  	// play notes
-				aux_led_color = GREEN;
-
-				pp6_set_seq_led(aux_led_color);
-
-				// flash white on rollover
-				if (seq_get_time() == 0) pp6_flash_seq_led(75);
-
-				// aux button gets pressed and held
-				if ( (!(( pp6_get_keys() >>17) & 1)) ) {
-					aux_button_depress_time++;
-					if (aux_button_depress_time > 500){
-						aux_button_depress_time = 0;
-						seq_set_status(SEQ_RECORD_ENABLE);
-						seq_set_all_notes_off();
-					}
-				}
-				// aux button swithes to stop
-				if (pp6_aux_button_pressed() || pp6_get_midi_stop()) {
-					seq_set_status(SEQ_STOPPED);
-					aux_button_depress_time = 0;
-					seq_set_all_notes_off();
-					sendStop();  // send MIDI stop
-				}
-			}
-
-			// CLOCK TICKER
-	        // tick the sequencer with midi clock if it is present, otherwise use internal
-			// but don't do any of this in mode 0
+			// ticks for arps, in arp modes, ticks from cv, midi, or internal
 			if (pp6_get_mode() != 0) {
-				if (pp6_get_clk_src() == CLK_SRC_INT) {
-					arp_count++;
-					period = rate * 200;
-					if ((arp_count > period) ) {
-						arp_tick = 1;
-						arp_count = 0;
-						if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(BLUE);
-						else pp6_set_clk_led(BLACK);
-						//seq_tick();
-					}
-				}
-
-				if (pp6_get_clk_src() == CLK_SRC_MIDI){
-
-					if ((rate * 1024) < 256) {
-						if ((!(pp6_get_midi_clock_count() % 3)) && (current_midi_clock != pp6_get_midi_clock_count())  ) {
-							arp_tick = 1;
-							current_midi_clock = pp6_get_midi_clock_count();
-							if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(GREEN);
-							else pp6_set_clk_led(BLACK);
-							//seq_tick();
-						}
-					}
-					else if ((rate * 1024) < 512) {
-						if ((!(pp6_get_midi_clock_count() % 6)) && (current_midi_clock != pp6_get_midi_clock_count())  ) {
-							arp_tick = 1;
-							current_midi_clock = pp6_get_midi_clock_count();
-							if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(GREEN);
-							else pp6_set_clk_led(BLACK);
-							//seq_tick();
-						}
-					}
-					else if ((rate * 1024) < 768) {
-						if ((!(pp6_get_midi_clock_count() % 8)) && (current_midi_clock != pp6_get_midi_clock_count())  ) {
-							arp_tick = 1;
-							current_midi_clock = pp6_get_midi_clock_count();
-							if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(GREEN);
-							else pp6_set_clk_led(BLACK);
-							//seq_tick();
-						}
-					}
-					else if ((rate * 1024) < 1024) {
-					   if ((!(pp6_get_midi_clock_count() % 12)) && (current_midi_clock != pp6_get_midi_clock_count())  ) {
-							current_midi_clock = pp6_get_midi_clock_count();
-							arp_tick = 1;
-
-							if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(GREEN);
-							else pp6_set_clk_led(BLACK);
-							//seq_tick();
-						}
-					}
-				} // end midi clock source
-				if (pp6_get_clk_src() == CLK_SRC_CV) {
-					if (pp6_get_cv_clock_tick() ) {
-						arp_tick = 1;
-						arp_count = 0;
-						if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(MAGENTA);
-						else pp6_set_clk_led(BLACK);
-						//seq_tick();
-					}
-				}
+				run_arp_ticks();
 			}
 			// in mode 0 (single shot)  just run clock at full speed
 			else {
-				arp_count++;
-				period = 1;  // just run it at full speed
-				if ((arp_count > period) ) {
-					arp_tick = 1;
-					arp_count = 0;
-					if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(BLUE);
-					else pp6_set_clk_led(BLACK);
-					//seq_tick();
-				}
+				run_arp_ticks_full_speed();
 			}
 
-			// END CLOCK TICKER
+			// copy keyboard notes to global notes
+			combine_keyboard_and_sequencer_notes();
 
-			// END SEQUENCER
-
-			// copy keyboard notes to notes
-			for (i=0; i<128; i++){
-
-				if (pp6_get_keyboard_note_state(i) || seq_get_note_state(i))
-					pp6_set_note_on(i);
-				else
-					pp6_set_note_off(i);
-			}
+			// the sequencer looks at difference in keyboard note state
+			// to determine events to log, so this needs to be called after run_seq
 			pp6_set_current_keyboard_note_state_to_last();
 
 			// check for a new key press that releases hold condition
 			if (seq_get_status() == SEQ_HOLDING ){
-				for (i = 0; i < 128; i++) {
-					if (pp6_get_note_state(i) != pp6_get_note_state_last(i)) {
-						if (pp6_get_note_state(i)) {
-							seq_set_status(SEQ_STOPPED);
-						}
-					}
-				}
+				check_for_hold_release();
 			}
 			// check for events and update the note list, only if we are not holding
 			if (seq_get_status() != SEQ_HOLDING ){
-				for (i = 0; i < 128; i++) {
-					if (pp6_get_note_state(i) != pp6_get_note_state_last(i)) {
-						if (pp6_get_note_state(i)) {
-								note_list_note_on(&nl, i);
-						}
-						else {
-								note_list_note_off(&nl, i);
-						}
-					}
-				}
-				pp6_set_current_note_state_to_last();
+				update_note_list();
 			}
-
-
 
 
 			//Single shot
@@ -718,19 +511,10 @@ int main(void)
 		 * Sample Rate
 		 */
 		if (software_index != hardware_index){
-			adjust_f();
+			if (!tuning_mode) adjust_f();
 
 			if (software_index & 1){   // channel
-
-
-					/*sig += .01f;
-					if (sig > 1)
-						sig = 0;
-
-				arm_float_to_q15(&sig, &out, 1);*/
-
-
-				s = (uint16_t) (65536.f * (v / 10.f)) ;
+				s = (uint16_t) (65535.f * (v / 10.f)) ;
 				// put the r
 				play_buf[software_index] = 0x0;   // make sure this is 0, see below
 				software_index++;
@@ -748,6 +532,295 @@ int main(void)
 	}
 }
 
+void update_note_list(void){
+	for (i = 0; i < 128; i++) {
+		if (pp6_get_note_state(i) != pp6_get_note_state_last(i)) {
+			if (pp6_get_note_state(i)) {
+					note_list_note_on(&nl, i);
+			}
+			else {
+					note_list_note_off(&nl, i);
+			}
+		}
+	}
+	pp6_set_current_note_state_to_last();
+}
+
+
+void check_for_hold_release(void){
+	for (i = 0; i < 128; i++) {
+		if (pp6_get_note_state(i) != pp6_get_note_state_last(i)) {
+			if (pp6_get_note_state(i)) {
+				seq_set_status(SEQ_STOPPED);
+			}
+		}
+	}
+}
+
+void combine_keyboard_and_sequencer_notes(void){
+	for (i=0; i<128; i++){
+
+		if (pp6_get_keyboard_note_state(i) || seq_get_note_state(i))
+			pp6_set_note_on(i);
+		else
+			pp6_set_note_off(i);
+	}
+}
+
+// ticks the arp by setting a flag.  uses the selected clock source
+void run_arp_ticks(void){
+
+	if (pp6_get_clk_src() == CLK_SRC_INT) {
+		arp_count++;
+		period = rate * 200;
+		if ((arp_count > period) ) {
+			arp_tick = 1;
+			arp_count = 0;
+			if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(BLUE);
+			else pp6_set_clk_led(BLACK);
+			//seq_tick();
+		}
+	}
+
+	if (pp6_get_clk_src() == CLK_SRC_MIDI){
+
+		if ((rate * 1024) < 256) {
+			if ((!(pp6_get_midi_clock_count() % 3)) && (current_midi_clock != pp6_get_midi_clock_count())  ) {
+				arp_tick = 1;
+				current_midi_clock = pp6_get_midi_clock_count();
+				if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(GREEN);
+				else pp6_set_clk_led(BLACK);
+				//seq_tick();
+			}
+		}
+		else if ((rate * 1024) < 512) {
+			if ((!(pp6_get_midi_clock_count() % 6)) && (current_midi_clock != pp6_get_midi_clock_count())  ) {
+				arp_tick = 1;
+				current_midi_clock = pp6_get_midi_clock_count();
+				if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(GREEN);
+				else pp6_set_clk_led(BLACK);
+				//seq_tick();
+			}
+		}
+		else if ((rate * 1024) < 768) {
+			if ((!(pp6_get_midi_clock_count() % 8)) && (current_midi_clock != pp6_get_midi_clock_count())  ) {
+				arp_tick = 1;
+				current_midi_clock = pp6_get_midi_clock_count();
+				if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(GREEN);
+				else pp6_set_clk_led(BLACK);
+				//seq_tick();
+			}
+		}
+		else if ((rate * 1024) < 1024) {
+		   if ((!(pp6_get_midi_clock_count() % 12)) && (current_midi_clock != pp6_get_midi_clock_count())  ) {
+				current_midi_clock = pp6_get_midi_clock_count();
+				arp_tick = 1;
+
+				if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(GREEN);
+				else pp6_set_clk_led(BLACK);
+				//seq_tick();
+			}
+		}
+	}
+
+	if (pp6_get_clk_src() == CLK_SRC_CV) {
+		if (pp6_get_cv_clock_tick() ) {
+			arp_tick = 1;
+			arp_count = 0;
+			if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(MAGENTA);
+			else pp6_set_clk_led(BLACK);
+			//seq_tick();
+		}
+	}
+}
+
+// just ticks at full speed (used for mode 0 single shot)
+void run_arp_ticks_full_speed(void){
+	arp_count++;
+	period = 1;  // just run it at full speed
+	if ((arp_count > period) ) {
+		arp_tick = 1;
+		arp_count = 0;
+		if (pp6_get_clk_led() == BLACK) pp6_set_clk_led(BLUE);
+		else pp6_set_clk_led(BLACK);
+		//seq_tick();
+	}
+}
+
+void run_sequencer(void){
+
+	// tick the main sequencer clock
+	seq_tick();
+
+	//
+	if (seq_get_status() == SEQ_STOPPED){
+
+		pp6_set_seq_led(BLACK);
+
+		// aux button gets pressed and held
+		if ( !pp6_get_keyboard_notes_on() ) {  // only if there are not notes held down, and a hold is not already set
+
+			// record enable if seq button is pressed and held
+			if ( (!(( pp6_get_keys() >> 17) & 1)) ) {
+				aux_button_depress_time++;
+				if (aux_button_depress_time > 500){
+					aux_button_depress_time = 0;
+					seq_set_status(SEQ_RECORD_ENABLE);
+				}
+			}
+
+			// if pressed, and there is a sequence (positive length), play
+			if (pp6_aux_button_pressed() || pp6_get_midi_start()) {
+				if (seq_get_length()) {  // only play if positive length
+
+					// TODO :: ?? can't have this in here  (at least have a reset_arps() function)
+					//RESET ARPS
+					transformed.index=0;
+					oct = 0;
+					oct_delta = 1;
+
+					seq_set_status(SEQ_PLAYING);
+					sendStart();  // send out a midi start
+				}
+				else seq_set_status(SEQ_STOPPED);
+				seq_rewind();
+				aux_button_depress_time = 0;
+			}
+		}
+		else {  // check for hold condition
+			if (pp6_aux_button_pressed()) {
+				seq_set_status(SEQ_HOLDING);
+			}
+		}
+	}
+	else if (seq_get_status() == SEQ_HOLDING){
+		pp6_set_seq_led(MAGENTA);
+		if (pp6_aux_button_pressed()) {
+			seq_set_status(SEQ_STOPPED);
+		}
+		// record enable
+		if ( (!(( pp6_get_keys() >> 17) & 1)) ) {
+			aux_button_depress_time++;
+			if (aux_button_depress_time > 500){
+				aux_button_depress_time = 0;
+				seq_set_status(SEQ_RECORD_ENABLE);
+			}
+		}
+	}
+	else if (seq_get_status() == SEQ_RECORD_ENABLE){
+		flash_led_record_enable();
+		if (pp6_aux_button_pressed()) {
+			seq_set_status(SEQ_STOPPED);
+		}
+		if (pp6_keyboard_note_on_flag()){
+			seq_set_status(SEQ_RECORDING);
+			seq_start_recording();
+			seq_log_first_notes();
+			seq_log_knobs(pp6_get_knob_array());
+			sendStart();  // send out a midi start
+		}
+		if (pp6_get_midi_start()) {
+			seq_set_status(SEQ_RECORDING);
+			seq_start_recording();
+			seq_log_first_note_null();   // sequence doesn't start with a note
+			sendStart();  // send out a midi start
+		}
+	}
+	else if (seq_get_status() == SEQ_RECORDING){
+
+		pp6_set_seq_led(RED);
+		seq_log_events();
+
+		// stop recording
+		if (pp6_aux_button_pressed() || seq_get_auto_stop()) {
+			seq_stop_recording();
+			seq_set_status(SEQ_PLAYING);
+			seq_enable_knob_playback();
+			aux_button_depress_time = 0;
+			seq_clear_auto_stop();
+			sendStop();  // send MIDI stop
+
+			// TODO :: ?? can't have this in here  (atleast have a reset_arps() function)
+			//RESET ARPS
+			transformed.index=0;
+			oct = 0;
+			oct_delta = 1;
+		}
+		if (pp6_get_midi_stop()) {   // if a midi stop is received, stop recording, and dont play
+			seq_stop_recording();
+			seq_set_status(SEQ_STOPPED);
+			aux_button_depress_time = 0;
+			seq_clear_auto_stop();
+			sendStop();  // send MIDI stop
+		}
+
+	}
+	else if (seq_get_status() == SEQ_PLAYING) {
+
+		seq_play_knobs();  	// play knobs
+		seq_play_tick();  	// play notes
+		aux_led_color = GREEN;
+
+		pp6_set_seq_led(aux_led_color);
+
+		// flash white on rollover
+		if (seq_get_time() == 0) pp6_flash_seq_led(75);
+
+		// aux button gets pressed and held
+		if ( (!(( pp6_get_keys() >>17) & 1)) ) {
+			aux_button_depress_time++;
+			if (aux_button_depress_time > 500){
+				aux_button_depress_time = 0;
+				seq_set_status(SEQ_RECORD_ENABLE);
+				seq_set_all_notes_off();
+			}
+		}
+		// aux button swithes to stop
+		if (pp6_aux_button_pressed() || pp6_get_midi_stop()) {
+			seq_set_status(SEQ_STOPPED);
+			aux_button_depress_time = 0;
+			seq_set_all_notes_off();
+			sendStop();  // send MIDI stop
+		}
+	}
+}
+
+void check_cv_clock(void){
+	// check for CV clock
+	cv_clock_state_history[cv_clock_state_history_index] = pp6_get_cv_clk();
+	cv_clock_state_history_index++;
+	cv_clock_state_history_index &= 1;
+
+	// poor mans debounce
+	if(cv_clock_state_history[0] == cv_clock_state_history[1])
+		cv_clock_state = cv_clock_state_history[0];
+
+	// click along
+	if (cv_clock_state != cv_clock_state_last){
+		cv_clock_state_last = cv_clock_state;
+		cv_clock_last_tick = sample_clock;
+		pp6_set_cv_clock_tick();
+	}
+
+	// get cv clock period
+	cv_clock_period = sample_clock - cv_clock_last_tick;
+}
+
+void determine_clock_source(void){
+	// determine clock source,
+	// cv gets precedance
+	if (cv_clock_period < CV_CLOCK_TIMEOUT)
+		pp6_set_clk_src(CLK_SRC_CV);
+	else {
+			// then midi, then internal
+			if (pp6_midi_clock_present()){
+				pp6_set_clk_src(CLK_SRC_MIDI);
+			}
+			if (!pp6_midi_clock_present()){
+				pp6_set_clk_src(CLK_SRC_INT);
+			}
+	}
+}
 
 void play_note(void){
 	//cents = cents_target;
