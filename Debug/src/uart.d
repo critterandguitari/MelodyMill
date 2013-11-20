@@ -31,7 +31,8 @@ src/uart.d: ../src/uart.c ../src/uart.h \
  /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/inc/stm32f4xx_tim.h \
  /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/inc/stm32f4xx_usart.h \
  /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/inc/stm32f4xx_wwdg.h \
- /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/inc/misc.h
+ /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/inc/misc.h \
+ ../src/midi.h
 
 ../src/uart.h:
 
@@ -100,3 +101,5 @@ src/uart.d: ../src/uart.c ../src/uart.h \
 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/inc/stm32f4xx_wwdg.h:
 
 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/inc/misc.h:
+
+../src/midi.h:

@@ -37,6 +37,12 @@ extern uint32_t sample_clock;
 // pocket piano object
 extern pocket_piano pp6;
 
+// from uart.c
+// MIDI buffer
+extern uint8_t  uart_recv_buf[32];
+extern uint8_t  uart_recv_buf_write;
+extern uint8_t  uart_recv_buf_read;
+
 // for keeping track of time
 uint32_t sample_clock_last = 0;
 
@@ -44,10 +50,6 @@ uint32_t sample_clock_last = 0;
 uint32_t led_counter = 0;  // for the flash function
 uint8_t aux_led_color = BLACK;
 
-// MIDI buffer
-uint8_t  uart_recv_buf[32];
-uint8_t  uart_recv_buf_write = 0;
-uint8_t  uart_recv_buf_read = 0;
 uint8_t tmp8;
 
 // params from knobs
@@ -118,6 +120,7 @@ static void combine_keyboard_and_sequencer_notes(void);
 
 static void check_for_hold_release(void);
 static void update_note_list(void);
+static void tune_up(void);
 
 int main(void)
 {
@@ -179,30 +182,13 @@ int main(void)
 
 		// check for new midi
 	    // buffer midi reception
-	    if (!(USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET)){
-	    	uart_recv_buf[uart_recv_buf_write] = USART_ReceiveData(USART1);
-
-	    	// if its a sync, send it thru immediately  to avoid jitter
-	    	if (uart_recv_buf[uart_recv_buf_write] == STATUS_SYNC) {
-		    	sendSync();
-	    	}
+		// this happens in uart.c isr
 
 
-
-	        uart_recv_buf_write++;
-	        uart_recv_buf_write &= 0x1f;  // 32 bytes
-	    }
-
-        // process MIDI, pp6 will be updated from midi.c handlers if there are any relevant midi events
-        if (uart_recv_buf_read != uart_recv_buf_write){
-            tmp8 = uart_recv_buf[uart_recv_buf_read];
-            uart_recv_buf_read++;
-            uart_recv_buf_read &= 0x1f;
-            recvByte(tmp8);
-        }
 
         // empty the tx buffer
         uart_service_tx_buf();
+
 
 		/*
 		 * Control Rate, 64 sample periods
@@ -212,19 +198,7 @@ int main(void)
 			// make sure this only happens once every 64 sample periods
 			sample_clock_last = sample_clock;
 
-
-			if ((sample_clock >> 10) & 1){
-				v = 10.f;
-				pp6_set_seq_led(7);
-				pp6_set_mode_led(7);
-				pp6_set_clk_led(7);
-			}
-			else {
-				v = 10;
-				pp6_set_seq_led(0);
-				pp6_set_mode_led(0);
-				pp6_set_clk_led(0);
-			}
+			tune_up();
         }
 
         // MAIN CONTROL LOOP, 64 SAMPLE PERIODS
@@ -233,7 +207,13 @@ int main(void)
 			// make sure this only happens once every 64 sample periods
 			sample_clock_last = sample_clock;
 
-
+	        // process MIDI, pp6 will be updated from midi.c handlers if there are any relevant midi events
+	        if (uart_recv_buf_read != uart_recv_buf_write){
+	            tmp8 = uart_recv_buf[uart_recv_buf_read];
+	            uart_recv_buf_read++;
+	            uart_recv_buf_read &= 0x1f;
+	            recvByte(tmp8);
+	        }
 
 	        // midi clock auto detection
 	        pp6_check_for_midi_clock();
@@ -312,7 +292,6 @@ int main(void)
 					if (current_note) // only do this once
 						sendNoteOff(1, last_midi_note, 0);
 					current_note = 0;
-
 				}
 			} // mode 0
 
@@ -529,6 +508,21 @@ int main(void)
 				software_index &= 0xf;
 	    	}
 	    }
+	}
+}
+
+void tune_up(void){
+	if ((sample_clock >> 10) & 1){
+		v = 10.f;
+		pp6_set_seq_led(7);
+		pp6_set_mode_led(7);
+		pp6_set_clk_led(7);
+	}
+	else {
+		v = 10;
+		pp6_set_seq_led(0);
+		pp6_set_mode_led(0);
+		pp6_set_clk_led(0);
 	}
 }
 
