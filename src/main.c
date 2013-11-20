@@ -28,6 +28,8 @@
 #include "midi.h"
 #include "notelist.h"
 
+#define GATE_RESET_PERIOD 4
+
 // from the DAC driver CS4344.c
 extern unsigned int software_index;
 extern unsigned int hardware_index;
@@ -99,6 +101,7 @@ uint16_t s;
 // used to determine hold condition
 uint32_t aux_button_depress_time = 0;
 
+
 static void Delay(__IO uint32_t nCount);
 static void flash_led_record_enable(void);
 static void play_note(void);
@@ -168,11 +171,11 @@ int main(void)
 	for (i = 0; i < 9; i++)
 		pp6_keys_update();
 
+	// see if we should be in tuning mode
 	if (!((pp6_get_keys() >> 17) & 1))
 		tuning_mode = 1;
 	else
 		tuning_mode = 0;
-
 
 	// main loop
 	while (1)	{
@@ -289,8 +292,7 @@ int main(void)
 				}
 				if (!nl.len) {   // turn gate off if no notes are being held
 					pp6_set_gate(0);
-					if (current_note) // only do this once
-						sendNoteOff(1, last_midi_note, 0);
+					pp6_set_all_midi_out_off();
 					current_note = 0;
 				}
 			} // mode 0
@@ -440,26 +442,25 @@ int main(void)
 			} // mode 4
 
 
-			// maintain the gate output
+			// maintain the gate output, and midi note off output
 			// gate goes low for 2 ms before going high (so we always have a note)
 			// not used for single shot (mode 0)
 			if (pp6_get_mode() != 0) {
 				if (gate_reset){
 					gate_reset--;
 					pp6_set_gate(0);
-					// send the midi note off
-
+					pp6_set_all_midi_out_off();
 				}
 				else {  // after gate has been low for a couple ms, bring it high for the specified dur, but only for arp modes
 
 					if(gate_time) {
 						gate_time--;
 						pp6_set_gate(1);
-						if (!gate_time)  //only send it out once
-							sendNoteOff(1, last_midi_note, 0);
+						pp6_set_midi_out_note_on(current_midi_note); // remember that current_midi_note was calculated in the play_note function
 					}
 					else {
 						pp6_set_gate(0);
+						pp6_set_all_midi_out_off();
 					}
 				}
 			}
@@ -472,6 +473,16 @@ int main(void)
 				pp6_set_trig(0);  // set trig back to 0
 			}
 
+			// compare midi output note states to their previos, and send note messages if differnet
+			for (i = 0; i < 128; i++){
+				if (pp6_get_midi_out_note_state(i) != pp6_get_midi_out_note_state_last(i)){
+					if (pp6_get_midi_out_note_state(i))
+						sendNoteOn(1, i, 100);
+					else
+						sendNoteOff(1, i, 0);
+				}
+			}
+			pp6_set_current_midi_out_note_state_to_last();
 
 
 			// clear all the events
@@ -819,19 +830,21 @@ void determine_clock_source(void){
 void play_note(void){
 	//cents = cents_target;
 	gate_time = (int)(dur * 200);
-	gate_reset = 4;  // 4 control periods of reset
+	gate_reset = GATE_RESET_PERIOD;  // 4 control periods of reset
 
 	trig_time = 5;
 
 	glide_step = ABS(cents - cents_target) / (glide * 10000);   // determine slope for fix time glide
 
 	current_midi_note = (uint8_t)(cents_target / 100);
-	if (pp6_get_mode() == 0) {
-		sendNoteOff(1, last_midi_note, 100);
-	}
-	sendNoteOn(1, current_midi_note, 100);
-	last_midi_note = current_midi_note;
 
+	// if we are in mode 0, shut the previous note off, turn new one on
+	// other modes get midi out when the gate is set
+	if (pp6_get_mode() == 0) {
+		// first turn off any midi notes playing
+		pp6_set_all_midi_out_off();
+		pp6_set_midi_out_note_on(current_midi_note);
+	}
 }
 
 void adjust_f(void){

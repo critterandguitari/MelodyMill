@@ -72,6 +72,9 @@ typedef struct {
 	uint8_t keyboard_note_state[128];	  // state of all the keyboard notes -- 0 for off, anything else for on
 	uint8_t keyboard_note_state_last[128]; // the previos time thru the main loop that notes were updated.  compared with above to get note events
 
+	uint8_t midi_out_note_state[128];
+	uint8_t midi_out_note_state_last[128];
+
 	uint8_t keyboard_note_on_flag;
 
 	// keys
@@ -224,6 +227,13 @@ void pp6_set_keyboard_note_on(uint8_t note);
 uint8_t pp6_get_keyboard_note_state(uint8_t note);
 uint8_t pp6_get_keyboard_note_state_last(uint8_t note);
 uint8_t pp6_keyboard_note_on_flag();
+
+void pp6_set_current_midi_out_note_state_to_last(void);
+void pp6_set_midi_out_note_off(uint8_t note);
+void pp6_set_midi_out_note_on(uint8_t note);
+uint8_t pp6_get_midi_out_note_state(uint8_t note);
+uint8_t pp6_get_midi_out_note_state_last(uint8_t note);
+void pp6_set_all_midi_out_off(void);
 
 // Clock stuff
 uint8_t pp6_get_clk_src(void);

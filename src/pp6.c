@@ -101,6 +101,9 @@ void pp6_init(void) {
 
 		pp6.keyboard_note_state[i] = 0;
 		pp6.keyboard_note_state_last[i] = 0;
+
+		pp6.midi_out_note_state[i] = 0;
+		pp6.midi_out_note_state_last[i] = 0;
 	}
 }
 
@@ -410,17 +413,39 @@ void pp6_get_key_events(void) {
 
 // the note interface for the piano
 
+
+
+
+//notes for midi output
+void pp6_set_midi_out_note_off(uint8_t note){
+		pp6.midi_out_note_state[note & 0x7f] = 0;
+}
+void pp6_set_midi_out_note_on(uint8_t note){
+	pp6.midi_out_note_state[note & 0x7f] = 1;
+}
+uint8_t pp6_get_midi_out_note_state(uint8_t note){
+	return pp6.midi_out_note_state[note & 0x7f];
+}
+uint8_t pp6_get_midi_out_note_state_last(uint8_t note){
+	return pp6.midi_out_note_state_last[note & 0x7f];
+}
+void pp6_set_current_midi_out_note_state_to_last(void){
+	uint8_t i;
+	for (i = 0; i < 128; i++){
+		pp6.midi_out_note_state_last[i] = pp6.midi_out_note_state[i];
+	}
+}
+void pp6_set_all_midi_out_off(void){
+	uint8_t i;
+	for (i=0; i<128; i++){
+		pp6_set_midi_out_note_off(i); // nothing is actually sent, it will be compared with previous midi out note state, and then sent out if different
+	}
+}
+
+// notes from keyboard and midi input
 uint8_t pp6_keyboard_note_on_flag() {
 	return pp6.keyboard_note_on_flag;
 }
-
-void pp6_set_note_off(uint8_t note){
-		pp6.note_state[note & 0x7f] = 0;
-}
-void pp6_set_note_on(uint8_t note){
-	pp6.note_state[note & 0x7f] = 1;
-}
-
 void pp6_set_keyboard_note_off(uint8_t note){
 		pp6.keyboard_note_state[note & 0x7f] = 0;
 }
@@ -435,7 +460,6 @@ uint8_t pp6_get_keyboard_note_state_last(uint8_t note){
 	return pp6.keyboard_note_state_last[note & 0x7f];
 }
 
-
 void pp6_set_current_keyboard_note_state_to_last(void){
 	uint8_t i;
 	for (i = 0; i < 128; i++){
@@ -443,6 +467,14 @@ void pp6_set_current_keyboard_note_state_to_last(void){
 	}
 }
 
+
+// global notes
+void pp6_set_note_off(uint8_t note){
+		pp6.note_state[note & 0x7f] = 0;
+}
+void pp6_set_note_on(uint8_t note){
+	pp6.note_state[note & 0x7f] = 1;
+}
 uint8_t pp6_get_note_state(uint8_t note){
 	return pp6.note_state[note & 0x7f];
 }
