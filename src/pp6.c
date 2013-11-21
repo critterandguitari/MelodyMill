@@ -260,7 +260,7 @@ void pp6_change_mode(void){
 		if (pp6.mode == 7) pp6.mode = 0;
 	}
 	else {
-		if (pp6.mode == 5) pp6.mode = 0;
+		if (pp6.mode == 6) pp6.mode = 0;
 	}
 		pp6_set_mode_led(pp6.mode + 1);
 }

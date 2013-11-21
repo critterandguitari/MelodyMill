@@ -101,6 +101,10 @@ uint16_t s;
 // used to determine hold condition
 uint32_t aux_button_depress_time = 0;
 
+// used in the randomizer to prevent double play
+uint32_t oct_last = 0;
+uint32_t index_last = 0;
+
 
 static void Delay(__IO uint32_t nCount);
 static void flash_led_record_enable(void);
@@ -277,7 +281,6 @@ int main(void)
 				update_note_list();
 			}
 
-
 			//Single shot
 			if (pp6_get_mode() == 0){
 				// single shot
@@ -296,7 +299,6 @@ int main(void)
 					current_note = 0;
 				}
 			} // mode 0
-
 
 			//?
 			if (pp6_get_mode() == 1){
@@ -441,6 +443,41 @@ int main(void)
 				}
 			} // mode 4
 
+			// random notes
+			if (pp6_get_mode() == 5){
+				note_list_copy_notes(&nl, &transformed);
+
+				if (nl.len > 0) { // if notes are down
+
+					if (arp_tick ) { // got an arp tick
+
+						arp_tick = 0;
+						i = (uint32_t)(range * 6);
+						if (i)
+							oct = RNG_GetRandomNumber() % (uint32_t)(range * 6);
+						else
+							oct = 0;
+						// if more then 1 note held down, don't play same twince in a row
+						if (transformed.len > 1){
+							transformed.index = RNG_GetRandomNumber() % transformed.len;
+							while (transformed.index == index_last){
+								transformed.index = RNG_GetRandomNumber() % transformed.len;
+							}
+							index_last = transformed.index;
+						}
+						else
+							transformed.index = RNG_GetRandomNumber() % transformed.len;
+
+						cents_target = (float32_t)(transformed.note_list[transformed.index]  + (oct * 12)) * 100;
+
+						play_note();
+
+					} // click
+				}
+				else {   // no notes down, reset arp
+					if (arp_tick ) arp_tick = 0; // keep this unchecked
+				}
+			} // mode 5
 
 			// maintain the gate output, and midi note off output
 			// gate goes low for 2 ms before going high (so we always have a note)
@@ -482,6 +519,7 @@ int main(void)
 						sendNoteOff(1, i, 0);
 				}
 			}
+			// update for next time thru
 			pp6_set_current_midi_out_note_state_to_last();
 
 
