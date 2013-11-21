@@ -56,6 +56,7 @@ uint8_t tmp8;
 
 // params from knobs
 float32_t rate, range, tune, glide, dur;
+uint32_t rate_knob_10_bit_flipped = 0;
 
 // not gen
 uint32_t gate_time = 0;
@@ -230,11 +231,12 @@ int main(void)
 			pp6_knobs_update();
 
 			// update params
-			rate = 1.05 - pp6_get_knob_5();
+			rate = 1.075 - pp6_get_knob_5(); // don't want it to got all the way to 0, it might fuck up the midi output
+			rate_knob_10_bit_flipped = 1024 - ((uint32_t) (pp6_get_knob_5() * 1024) );  // this is used for the midi clock division selection
 			range = pp6_get_knob_4();
 			tune = pp6_get_knob_1();
 			glide = pp6_get_knob_2();
-			dur = pp6_get_knob_3();
+			dur = pp6_get_knob_3() + .1f; // don't let this be 0 cause we gotta send note messages (and be able to hear it!)
 
 			// check for new key events
 			pp6_get_key_events();
@@ -627,7 +629,7 @@ void run_arp_ticks(void){
 
 	if (pp6_get_clk_src() == CLK_SRC_MIDI){
 
-		if ((rate * 1024) < 256) {
+		if (rate_knob_10_bit_flipped < 256) {
 			if ((!(pp6_get_midi_clock_count() % 3)) && (current_midi_clock != pp6_get_midi_clock_count())  ) {
 				arp_tick = 1;
 				current_midi_clock = pp6_get_midi_clock_count();
@@ -636,7 +638,7 @@ void run_arp_ticks(void){
 				//seq_tick();
 			}
 		}
-		else if ((rate * 1024) < 512) {
+		else if (rate_knob_10_bit_flipped < 512) {
 			if ((!(pp6_get_midi_clock_count() % 6)) && (current_midi_clock != pp6_get_midi_clock_count())  ) {
 				arp_tick = 1;
 				current_midi_clock = pp6_get_midi_clock_count();
@@ -645,7 +647,7 @@ void run_arp_ticks(void){
 				//seq_tick();
 			}
 		}
-		else if ((rate * 1024) < 768) {
+		else if (rate_knob_10_bit_flipped < 768) {
 			if ((!(pp6_get_midi_clock_count() % 8)) && (current_midi_clock != pp6_get_midi_clock_count())  ) {
 				arp_tick = 1;
 				current_midi_clock = pp6_get_midi_clock_count();
@@ -654,7 +656,7 @@ void run_arp_ticks(void){
 				//seq_tick();
 			}
 		}
-		else if ((rate * 1024) < 1024) {
+		else if (rate_knob_10_bit_flipped <= 1024) {
 		   if ((!(pp6_get_midi_clock_count() % 12)) && (current_midi_clock != pp6_get_midi_clock_count())  ) {
 				current_midi_clock = pp6_get_midi_clock_count();
 				arp_tick = 1;
@@ -899,14 +901,14 @@ void adjust_f(void){
 	if (GPIO_ReadInputDataBit(GPIOE, GPIO_Pin_3)){
 		v = (cents + (tune * 2400.f)) / 1200.f;
 		if(pp6_get_gate())   // turn off pwm if note is over
-			pwm_set( c_to_f_ratio((cents + (tune * 2400.f))) * 10  );
+			pwm_set( c_to_f_ratio((cents + (tune * 2400.f))) * 8 * 1.020408163f );
 		else
 			pwm_set(0);
 	}
 	else {
 		v = ((cents + 1200) + (tune * 2400.f)) / 1200.f;
 		if(pp6_get_gate())   // turn off pwm if note is over
-			pwm_set( c_to_f_ratio(((cents + 1200) + (tune * 2400.f))) * 10  );
+			pwm_set( c_to_f_ratio(((cents + 1200) + (tune * 2400.f))) * 8 * 1.020408163f  );
 		else
 			pwm_set(0);
 	}
