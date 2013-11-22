@@ -75,6 +75,12 @@ Discarded input sections
  .bss.last_midi_note
                 0x00000000        0x1 ./src/main.o
  .bss.oct_last  0x00000000        0x4 ./src/main.o
+ .data.rows     0x00000000        0x4 ./src/main.o
+ .bss.row_index
+                0x00000000        0x1 ./src/main.o
+ .bss.state     0x00000000        0x1 ./src/main.o
+ .text.get_cell
+                0x00000000       0x38 ./src/main.o
  .text.Delay    0x00000000       0x2c ./src/main.o
  .text          0x00000000        0x0 ./src/midi.o
  .data          0x00000000        0x0 ./src/midi.o
@@ -1736,85 +1742,85 @@ END GROUP
                 0x2001c000                PROVIDE (_vStackTop, (__top_Ram112 - 0x0))
 OUTPUT(MelodyMill.axf elf32-littlearm)
 
-.debug_info     0x00000000     0xc23c
+.debug_info     0x00000000     0xc2ae
  .debug_info    0x00000000      0x7cb ./src/CS4344.o
  .debug_info    0x000007cb      0x196 ./src/audio.o
  .debug_info    0x00000961      0x31b ./src/cr_startup_stm32f4xx.o
- .debug_info    0x00000c7c      0xa04 ./src/main.o
- .debug_info    0x00001680      0x849 ./src/midi.o
- .debug_info    0x00001ec9      0x4ec ./src/notelist.o
- .debug_info    0x000023b5      0x956 ./src/oscillator.o
- .debug_info    0x00002d0b     0x13b2 ./src/pp6.o
- .debug_info    0x000040bd      0x6e8 ./src/pwm.o
- .debug_info    0x000047a5      0x1c6 ./src/sad.o
- .debug_info    0x0000496b      0x242 ./src/sadsr.o
- .debug_info    0x00004bad      0x58b ./src/sequencer.o
- .debug_info    0x00005138      0x625 ./src/system_stm32f4xx.o
- .debug_info    0x0000575d      0x3be ./src/timer.o
- .debug_info    0x00005b1b      0x881 ./src/uart.o
- .debug_info    0x0000639c      0x59c /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(misc.o)
- .debug_info    0x00006938      0xcfd /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_adc.o)
- .debug_info    0x00007635      0x641 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_gpio.o)
- .debug_info    0x00007c76      0xd2c /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rcc.o)
- .debug_info    0x000089a2      0x299 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rng.o)
- .debug_info    0x00008c3b      0xbd4 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_spi.o)
- .debug_info    0x0000980f     0x1e30 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_tim.o)
- .debug_info    0x0000b63f      0xa57 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_usart.o)
- .debug_info    0x0000c096      0x1a6 /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/lib/libCMSISv2p10_DSPLIB_CM4.a(arm_sin_f32.o)
+ .debug_info    0x00000c7c      0xa76 ./src/main.o
+ .debug_info    0x000016f2      0x849 ./src/midi.o
+ .debug_info    0x00001f3b      0x4ec ./src/notelist.o
+ .debug_info    0x00002427      0x956 ./src/oscillator.o
+ .debug_info    0x00002d7d     0x13b2 ./src/pp6.o
+ .debug_info    0x0000412f      0x6e8 ./src/pwm.o
+ .debug_info    0x00004817      0x1c6 ./src/sad.o
+ .debug_info    0x000049dd      0x242 ./src/sadsr.o
+ .debug_info    0x00004c1f      0x58b ./src/sequencer.o
+ .debug_info    0x000051aa      0x625 ./src/system_stm32f4xx.o
+ .debug_info    0x000057cf      0x3be ./src/timer.o
+ .debug_info    0x00005b8d      0x881 ./src/uart.o
+ .debug_info    0x0000640e      0x59c /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(misc.o)
+ .debug_info    0x000069aa      0xcfd /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_adc.o)
+ .debug_info    0x000076a7      0x641 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_gpio.o)
+ .debug_info    0x00007ce8      0xd2c /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rcc.o)
+ .debug_info    0x00008a14      0x299 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rng.o)
+ .debug_info    0x00008cad      0xbd4 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_spi.o)
+ .debug_info    0x00009881     0x1e30 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_tim.o)
+ .debug_info    0x0000b6b1      0xa57 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_usart.o)
+ .debug_info    0x0000c108      0x1a6 /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/lib/libCMSISv2p10_DSPLIB_CM4.a(arm_sin_f32.o)
 
-.debug_abbrev   0x00000000     0x1f12
+.debug_abbrev   0x00000000     0x1f38
  .debug_abbrev  0x00000000      0x17e ./src/CS4344.o
  .debug_abbrev  0x0000017e       0xc2 ./src/audio.o
  .debug_abbrev  0x00000240      0x119 ./src/cr_startup_stm32f4xx.o
- .debug_abbrev  0x00000359      0x1a5 ./src/main.o
- .debug_abbrev  0x000004fe      0x132 ./src/midi.o
- .debug_abbrev  0x00000630       0xed ./src/notelist.o
- .debug_abbrev  0x0000071d      0x14f ./src/oscillator.o
- .debug_abbrev  0x0000086c      0x253 ./src/pp6.o
- .debug_abbrev  0x00000abf      0x137 ./src/pwm.o
- .debug_abbrev  0x00000bf6       0xdd ./src/sad.o
- .debug_abbrev  0x00000cd3       0xe1 ./src/sadsr.o
- .debug_abbrev  0x00000db4      0x163 ./src/sequencer.o
- .debug_abbrev  0x00000f17      0x144 ./src/system_stm32f4xx.o
- .debug_abbrev  0x0000105b      0x109 ./src/timer.o
- .debug_abbrev  0x00001164      0x167 ./src/uart.o
- .debug_abbrev  0x000012cb      0x12a /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(misc.o)
- .debug_abbrev  0x000013f5      0x18d /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_adc.o)
- .debug_abbrev  0x00001582      0x186 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_gpio.o)
- .debug_abbrev  0x00001708      0x1bb /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rcc.o)
- .debug_abbrev  0x000018c3      0x13b /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rng.o)
- .debug_abbrev  0x000019fe      0x164 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_spi.o)
- .debug_abbrev  0x00001b62      0x167 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_tim.o)
- .debug_abbrev  0x00001cc9      0x152 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_usart.o)
- .debug_abbrev  0x00001e1b       0xf7 /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/lib/libCMSISv2p10_DSPLIB_CM4.a(arm_sin_f32.o)
+ .debug_abbrev  0x00000359      0x1cb ./src/main.o
+ .debug_abbrev  0x00000524      0x132 ./src/midi.o
+ .debug_abbrev  0x00000656       0xed ./src/notelist.o
+ .debug_abbrev  0x00000743      0x14f ./src/oscillator.o
+ .debug_abbrev  0x00000892      0x253 ./src/pp6.o
+ .debug_abbrev  0x00000ae5      0x137 ./src/pwm.o
+ .debug_abbrev  0x00000c1c       0xdd ./src/sad.o
+ .debug_abbrev  0x00000cf9       0xe1 ./src/sadsr.o
+ .debug_abbrev  0x00000dda      0x163 ./src/sequencer.o
+ .debug_abbrev  0x00000f3d      0x144 ./src/system_stm32f4xx.o
+ .debug_abbrev  0x00001081      0x109 ./src/timer.o
+ .debug_abbrev  0x0000118a      0x167 ./src/uart.o
+ .debug_abbrev  0x000012f1      0x12a /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(misc.o)
+ .debug_abbrev  0x0000141b      0x18d /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_adc.o)
+ .debug_abbrev  0x000015a8      0x186 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_gpio.o)
+ .debug_abbrev  0x0000172e      0x1bb /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rcc.o)
+ .debug_abbrev  0x000018e9      0x13b /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rng.o)
+ .debug_abbrev  0x00001a24      0x164 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_spi.o)
+ .debug_abbrev  0x00001b88      0x167 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_tim.o)
+ .debug_abbrev  0x00001cef      0x152 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_usart.o)
+ .debug_abbrev  0x00001e41       0xf7 /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/lib/libCMSISv2p10_DSPLIB_CM4.a(arm_sin_f32.o)
 
-.debug_loc      0x00000000     0x671a
+.debug_loc      0x00000000     0x6752
  .debug_loc     0x00000000       0x70 ./src/CS4344.o
  .debug_loc     0x00000070       0x70 ./src/audio.o
  .debug_loc     0x000000e0      0x102 ./src/cr_startup_stm32f4xx.o
- .debug_loc     0x000001e2      0x280 ./src/main.o
- .debug_loc     0x00000462      0x738 ./src/midi.o
- .debug_loc     0x00000b9a      0x34c ./src/notelist.o
- .debug_loc     0x00000ee6      0x462 ./src/oscillator.o
- .debug_loc     0x00001348     0x116c ./src/pp6.o
- .debug_loc     0x000024b4       0xa8 ./src/pwm.o
- .debug_loc     0x0000255c       0xe0 ./src/sad.o
- .debug_loc     0x0000263c      0x150 ./src/sadsr.o
- .debug_loc     0x0000278c      0x598 ./src/sequencer.o
- .debug_loc     0x00002d24       0x9c ./src/system_stm32f4xx.o
- .debug_loc     0x00002dc0       0x90 ./src/timer.o
- .debug_loc     0x00002e50       0xc8 ./src/uart.o
- .debug_loc     0x00002f18      0x118 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(misc.o)
- .debug_loc     0x00003030      0x838 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_adc.o)
- .debug_loc     0x00003868      0x310 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_gpio.o)
- .debug_loc     0x00003b78      0x97c /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rcc.o)
- .debug_loc     0x000044f4      0x1a8 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rng.o)
- .debug_loc     0x0000469c      0x578 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_spi.o)
- .debug_loc     0x00004c14     0x1420 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_tim.o)
- .debug_loc     0x00006034      0x658 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_usart.o)
- .debug_loc     0x0000668c       0x8e /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/lib/libCMSISv2p10_DSPLIB_CM4.a(arm_sin_f32.o)
+ .debug_loc     0x000001e2      0x2b8 ./src/main.o
+ .debug_loc     0x0000049a      0x738 ./src/midi.o
+ .debug_loc     0x00000bd2      0x34c ./src/notelist.o
+ .debug_loc     0x00000f1e      0x462 ./src/oscillator.o
+ .debug_loc     0x00001380     0x116c ./src/pp6.o
+ .debug_loc     0x000024ec       0xa8 ./src/pwm.o
+ .debug_loc     0x00002594       0xe0 ./src/sad.o
+ .debug_loc     0x00002674      0x150 ./src/sadsr.o
+ .debug_loc     0x000027c4      0x598 ./src/sequencer.o
+ .debug_loc     0x00002d5c       0x9c ./src/system_stm32f4xx.o
+ .debug_loc     0x00002df8       0x90 ./src/timer.o
+ .debug_loc     0x00002e88       0xc8 ./src/uart.o
+ .debug_loc     0x00002f50      0x118 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(misc.o)
+ .debug_loc     0x00003068      0x838 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_adc.o)
+ .debug_loc     0x000038a0      0x310 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_gpio.o)
+ .debug_loc     0x00003bb0      0x97c /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rcc.o)
+ .debug_loc     0x0000452c      0x1a8 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rng.o)
+ .debug_loc     0x000046d4      0x578 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_spi.o)
+ .debug_loc     0x00004c4c     0x1420 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_tim.o)
+ .debug_loc     0x0000606c      0x658 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_usart.o)
+ .debug_loc     0x000066c4       0x8e /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/lib/libCMSISv2p10_DSPLIB_CM4.a(arm_sin_f32.o)
 
-.debug_aranges  0x00000000     0x11e8
+.debug_aranges  0x00000000     0x11f0
  .debug_aranges
                 0x00000000       0x28 ./src/CS4344.o
  .debug_aranges
@@ -1822,99 +1828,99 @@ OUTPUT(MelodyMill.axf elf32-littlearm)
  .debug_aranges
                 0x00000050       0x80 ./src/cr_startup_stm32f4xx.o
  .debug_aranges
-                0x000000d0       0x88 ./src/main.o
+                0x000000d0       0x90 ./src/main.o
  .debug_aranges
-                0x00000158      0x138 ./src/midi.o
+                0x00000160      0x138 ./src/midi.o
  .debug_aranges
-                0x00000290       0x90 ./src/notelist.o
+                0x00000298       0x90 ./src/notelist.o
  .debug_aranges
-                0x00000320       0xb8 ./src/oscillator.o
+                0x00000328       0xb8 ./src/oscillator.o
  .debug_aranges
-                0x000003d8      0x2f0 ./src/pp6.o
+                0x000003e0      0x2f0 ./src/pp6.o
  .debug_aranges
-                0x000006c8       0x30 ./src/pwm.o
+                0x000006d0       0x30 ./src/pwm.o
  .debug_aranges
-                0x000006f8       0x38 ./src/sad.o
+                0x00000700       0x38 ./src/sad.o
  .debug_aranges
-                0x00000730       0x48 ./src/sadsr.o
+                0x00000738       0x48 ./src/sadsr.o
  .debug_aranges
-                0x00000778      0x100 ./src/sequencer.o
+                0x00000780      0x100 ./src/sequencer.o
  .debug_aranges
-                0x00000878       0x30 ./src/system_stm32f4xx.o
+                0x00000880       0x30 ./src/system_stm32f4xx.o
  .debug_aranges
-                0x000008a8       0x30 ./src/timer.o
+                0x000008b0       0x30 ./src/timer.o
  .debug_aranges
-                0x000008d8       0x38 ./src/uart.o
+                0x000008e0       0x38 ./src/uart.o
  .debug_aranges
-                0x00000910       0x40 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(misc.o)
+                0x00000918       0x40 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(misc.o)
  .debug_aranges
-                0x00000950      0x148 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_adc.o)
+                0x00000958      0x148 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_adc.o)
  .debug_aranges
-                0x00000a98       0x88 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_gpio.o)
+                0x00000aa0       0x88 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_gpio.o)
  .debug_aranges
-                0x00000b20      0x178 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rcc.o)
+                0x00000b28      0x178 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rcc.o)
  .debug_aranges
-                0x00000c98       0x58 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rng.o)
+                0x00000ca0       0x58 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rng.o)
  .debug_aranges
-                0x00000cf0       0xe0 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_spi.o)
+                0x00000cf8       0xe0 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_spi.o)
  .debug_aranges
-                0x00000dd0      0x2f8 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_tim.o)
+                0x00000dd8      0x2f8 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_tim.o)
  .debug_aranges
-                0x000010c8      0x100 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_usart.o)
+                0x000010d0      0x100 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_usart.o)
  .debug_aranges
-                0x000011c8       0x20 /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/lib/libCMSISv2p10_DSPLIB_CM4.a(arm_sin_f32.o)
+                0x000011d0       0x20 /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/lib/libCMSISv2p10_DSPLIB_CM4.a(arm_sin_f32.o)
 
-.debug_ranges   0x00000000     0x1068
+.debug_ranges   0x00000000     0x1070
  .debug_ranges  0x00000000       0x18 ./src/CS4344.o
  .debug_ranges  0x00000018       0x18 ./src/audio.o
  .debug_ranges  0x00000030       0x70 ./src/cr_startup_stm32f4xx.o
- .debug_ranges  0x000000a0       0x78 ./src/main.o
- .debug_ranges  0x00000118      0x128 ./src/midi.o
- .debug_ranges  0x00000240       0x80 ./src/notelist.o
- .debug_ranges  0x000002c0       0xa8 ./src/oscillator.o
- .debug_ranges  0x00000368      0x2e0 ./src/pp6.o
- .debug_ranges  0x00000648       0x20 ./src/pwm.o
- .debug_ranges  0x00000668       0x28 ./src/sad.o
- .debug_ranges  0x00000690       0x38 ./src/sadsr.o
- .debug_ranges  0x000006c8       0xf0 ./src/sequencer.o
- .debug_ranges  0x000007b8       0x20 ./src/system_stm32f4xx.o
- .debug_ranges  0x000007d8       0x20 ./src/timer.o
- .debug_ranges  0x000007f8       0x28 ./src/uart.o
- .debug_ranges  0x00000820       0x30 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(misc.o)
- .debug_ranges  0x00000850      0x138 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_adc.o)
- .debug_ranges  0x00000988       0x78 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_gpio.o)
- .debug_ranges  0x00000a00      0x168 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rcc.o)
- .debug_ranges  0x00000b68       0x48 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rng.o)
- .debug_ranges  0x00000bb0       0xd0 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_spi.o)
- .debug_ranges  0x00000c80      0x2e8 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_tim.o)
- .debug_ranges  0x00000f68       0xf0 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_usart.o)
- .debug_ranges  0x00001058       0x10 /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/lib/libCMSISv2p10_DSPLIB_CM4.a(arm_sin_f32.o)
+ .debug_ranges  0x000000a0       0x80 ./src/main.o
+ .debug_ranges  0x00000120      0x128 ./src/midi.o
+ .debug_ranges  0x00000248       0x80 ./src/notelist.o
+ .debug_ranges  0x000002c8       0xa8 ./src/oscillator.o
+ .debug_ranges  0x00000370      0x2e0 ./src/pp6.o
+ .debug_ranges  0x00000650       0x20 ./src/pwm.o
+ .debug_ranges  0x00000670       0x28 ./src/sad.o
+ .debug_ranges  0x00000698       0x38 ./src/sadsr.o
+ .debug_ranges  0x000006d0       0xf0 ./src/sequencer.o
+ .debug_ranges  0x000007c0       0x20 ./src/system_stm32f4xx.o
+ .debug_ranges  0x000007e0       0x20 ./src/timer.o
+ .debug_ranges  0x00000800       0x28 ./src/uart.o
+ .debug_ranges  0x00000828       0x30 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(misc.o)
+ .debug_ranges  0x00000858      0x138 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_adc.o)
+ .debug_ranges  0x00000990       0x78 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_gpio.o)
+ .debug_ranges  0x00000a08      0x168 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rcc.o)
+ .debug_ranges  0x00000b70       0x48 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rng.o)
+ .debug_ranges  0x00000bb8       0xd0 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_spi.o)
+ .debug_ranges  0x00000c88      0x2e8 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_tim.o)
+ .debug_ranges  0x00000f70       0xf0 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_usart.o)
+ .debug_ranges  0x00001060       0x10 /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/lib/libCMSISv2p10_DSPLIB_CM4.a(arm_sin_f32.o)
 
-.debug_line     0x00000000     0xb7b4
+.debug_line     0x00000000     0xb7c9
  .debug_line    0x00000000      0x634 ./src/CS4344.o
  .debug_line    0x00000634      0x463 ./src/audio.o
  .debug_line    0x00000a97      0x65e ./src/cr_startup_stm32f4xx.o
- .debug_line    0x000010f5      0xae1 ./src/main.o
- .debug_line    0x00001bd6      0x9dd ./src/midi.o
- .debug_line    0x000025b3      0x66e ./src/notelist.o
- .debug_line    0x00002c21      0x647 ./src/oscillator.o
- .debug_line    0x00003268     0x104e ./src/pp6.o
- .debug_line    0x000042b6      0x70f ./src/pwm.o
- .debug_line    0x000049c5      0x48e ./src/sad.o
- .debug_line    0x00004e53      0x4bc ./src/sadsr.o
- .debug_line    0x0000530f      0x71a ./src/sequencer.o
- .debug_line    0x00005a29      0x674 ./src/system_stm32f4xx.o
- .debug_line    0x0000609d      0x61e ./src/timer.o
- .debug_line    0x000066bb      0x65a ./src/uart.o
- .debug_line    0x00006d15      0x645 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(misc.o)
- .debug_line    0x0000735a      0x94b /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_adc.o)
- .debug_line    0x00007ca5      0x735 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_gpio.o)
- .debug_line    0x000083da      0x993 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rcc.o)
- .debug_line    0x00008d6d      0x67f /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rng.o)
- .debug_line    0x000093ec      0x84b /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_spi.o)
- .debug_line    0x00009c37      0xe70 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_tim.o)
- .debug_line    0x0000aaa7      0x886 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_usart.o)
- .debug_line    0x0000b32d      0x487 /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/lib/libCMSISv2p10_DSPLIB_CM4.a(arm_sin_f32.o)
+ .debug_line    0x000010f5      0xaf6 ./src/main.o
+ .debug_line    0x00001beb      0x9dd ./src/midi.o
+ .debug_line    0x000025c8      0x66e ./src/notelist.o
+ .debug_line    0x00002c36      0x647 ./src/oscillator.o
+ .debug_line    0x0000327d     0x104e ./src/pp6.o
+ .debug_line    0x000042cb      0x70f ./src/pwm.o
+ .debug_line    0x000049da      0x48e ./src/sad.o
+ .debug_line    0x00004e68      0x4bc ./src/sadsr.o
+ .debug_line    0x00005324      0x71a ./src/sequencer.o
+ .debug_line    0x00005a3e      0x674 ./src/system_stm32f4xx.o
+ .debug_line    0x000060b2      0x61e ./src/timer.o
+ .debug_line    0x000066d0      0x65a ./src/uart.o
+ .debug_line    0x00006d2a      0x645 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(misc.o)
+ .debug_line    0x0000736f      0x94b /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_adc.o)
+ .debug_line    0x00007cba      0x735 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_gpio.o)
+ .debug_line    0x000083ef      0x993 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rcc.o)
+ .debug_line    0x00008d82      0x67f /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rng.o)
+ .debug_line    0x00009401      0x84b /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_spi.o)
+ .debug_line    0x00009c4c      0xe70 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_tim.o)
+ .debug_line    0x0000aabc      0x886 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_usart.o)
+ .debug_line    0x0000b342      0x487 /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/lib/libCMSISv2p10_DSPLIB_CM4.a(arm_sin_f32.o)
 
 .debug_macinfo  0x00000000   0x63d084
  .debug_macinfo
@@ -1966,54 +1972,54 @@ OUTPUT(MelodyMill.axf elf32-littlearm)
  .debug_macinfo
                 0x00638d77     0x430d /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/lib/libCMSISv2p10_DSPLIB_CM4.a(arm_sin_f32.o)
 
-.debug_str      0x00000000     0x46a5
+.debug_str      0x00000000     0x46bd
  .debug_str     0x00000000      0x976 ./src/CS4344.o
                                 0x9b3 (size before relaxing)
  .debug_str     0x00000976       0x54 ./src/audio.o
                                 0x149 (size before relaxing)
  .debug_str     0x000009ca      0x179 ./src/cr_startup_stm32f4xx.o
                                 0x280 (size before relaxing)
- .debug_str     0x00000b43      0x399 ./src/main.o
-                                0x56f (size before relaxing)
- .debug_str     0x00000edc      0x263 ./src/midi.o
+ .debug_str     0x00000b43      0x3b1 ./src/main.o
+                                0x58d (size before relaxing)
+ .debug_str     0x00000ef4      0x263 ./src/midi.o
                                 0x414 (size before relaxing)
- .debug_str     0x0000113f      0x162 ./src/notelist.o
+ .debug_str     0x00001157      0x162 ./src/notelist.o
                                 0x2a3 (size before relaxing)
- .debug_str     0x000012a1      0x2a2 ./src/oscillator.o
+ .debug_str     0x000012b9      0x2a2 ./src/oscillator.o
                                 0x3ea (size before relaxing)
- .debug_str     0x00001543      0xa0d ./src/pp6.o
+ .debug_str     0x0000155b      0xa0d ./src/pp6.o
                                 0xea1 (size before relaxing)
- .debug_str     0x00001f50      0x1ce ./src/pwm.o
+ .debug_str     0x00001f68      0x1ce ./src/pwm.o
                                 0x501 (size before relaxing)
- .debug_str     0x0000211e       0x74 ./src/sad.o
+ .debug_str     0x00002136       0x74 ./src/sad.o
                                 0x178 (size before relaxing)
- .debug_str     0x00002192       0x85 ./src/sadsr.o
+ .debug_str     0x000021aa       0x85 ./src/sadsr.o
                                 0x1bf (size before relaxing)
- .debug_str     0x00002217      0x31d ./src/sequencer.o
+ .debug_str     0x0000222f      0x31d ./src/sequencer.o
                                 0x452 (size before relaxing)
- .debug_str     0x00002534      0x1b8 ./src/system_stm32f4xx.o
+ .debug_str     0x0000254c      0x1b8 ./src/system_stm32f4xx.o
                                 0x337 (size before relaxing)
- .debug_str     0x000026ec       0x35 ./src/timer.o
+ .debug_str     0x00002704       0x35 ./src/timer.o
                                 0x2be (size before relaxing)
- .debug_str     0x00002721      0x115 ./src/uart.o
+ .debug_str     0x00002739      0x115 ./src/uart.o
                                 0xa84 (size before relaxing)
- .debug_str     0x00002836      0x16c /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(misc.o)
+ .debug_str     0x0000284e      0x16c /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(misc.o)
                                 0x371 (size before relaxing)
- .debug_str     0x000029a2      0x4d6 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_adc.o)
+ .debug_str     0x000029ba      0x4d6 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_adc.o)
                                 0x79c (size before relaxing)
- .debug_str     0x00002e78      0x171 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_gpio.o)
+ .debug_str     0x00002e90      0x171 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_gpio.o)
                                 0x43b (size before relaxing)
- .debug_str     0x00002fe9      0x537 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rcc.o)
+ .debug_str     0x00003001      0x537 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rcc.o)
                                 0x7e8 (size before relaxing)
- .debug_str     0x00003520       0xad /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rng.o)
+ .debug_str     0x00003538       0xad /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rng.o)
                                 0x21c (size before relaxing)
- .debug_str     0x000035cd      0x2e6 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_spi.o)
+ .debug_str     0x000035e5      0x2e6 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_spi.o)
                                 0x622 (size before relaxing)
- .debug_str     0x000038b3      0x9cc /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_tim.o)
+ .debug_str     0x000038cb      0x9cc /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_tim.o)
                                 0xd68 (size before relaxing)
- .debug_str     0x0000427f      0x378 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_usart.o)
+ .debug_str     0x00004297      0x378 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_usart.o)
                                 0x627 (size before relaxing)
- .debug_str     0x000045f7       0xae /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/lib/libCMSISv2p10_DSPLIB_CM4.a(arm_sin_f32.o)
+ .debug_str     0x0000460f       0xae /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/lib/libCMSISv2p10_DSPLIB_CM4.a(arm_sin_f32.o)
                                 0x14e (size before relaxing)
 
 .comment        0x00000000      0x10a
@@ -2099,31 +2105,31 @@ OUTPUT(MelodyMill.axf elf32-littlearm)
  .ARM.attributes
                 0x00000556       0x39 /usr/local/redsuite_5.2.4_2122/redsuite/tools/bin/../lib/gcc/arm-none-eabi/4.6.2/../../../../arm-none-eabi/lib/armv7e-m/softfp/libcr_c.a(__weak__main.o)
 
-.debug_frame    0x00000000     0x379c
+.debug_frame    0x00000000     0x37b8
  .debug_frame   0x00000000       0x50 ./src/CS4344.o
  .debug_frame   0x00000050       0x48 ./src/audio.o
  .debug_frame   0x00000098       0xf4 ./src/cr_startup_stm32f4xx.o
- .debug_frame   0x0000018c      0x1a8 ./src/main.o
- .debug_frame   0x00000334      0x420 ./src/midi.o
- .debug_frame   0x00000754      0x1bc ./src/notelist.o
- .debug_frame   0x00000910      0x24c ./src/oscillator.o
- .debug_frame   0x00000b5c      0x980 ./src/pp6.o
- .debug_frame   0x000014dc       0x70 ./src/pwm.o
- .debug_frame   0x0000154c       0x80 ./src/sad.o
- .debug_frame   0x000015cc       0xb8 ./src/sadsr.o
- .debug_frame   0x00001684      0x324 ./src/sequencer.o
- .debug_frame   0x000019a8       0x64 ./src/system_stm32f4xx.o
- .debug_frame   0x00001a0c       0x68 ./src/timer.o
- .debug_frame   0x00001a74       0x88 ./src/uart.o
- .debug_frame   0x00001afc       0x9c /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(misc.o)
- .debug_frame   0x00001b98      0x434 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_adc.o)
- .debug_frame   0x00001fcc      0x19c /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_gpio.o)
- .debug_frame   0x00002168      0x4d8 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rcc.o)
- .debug_frame   0x00002640       0xec /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rng.o)
- .debug_frame   0x0000272c      0x2d0 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_spi.o)
- .debug_frame   0x000029fc      0xa3c /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_tim.o)
- .debug_frame   0x00003438      0x344 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_usart.o)
- .debug_frame   0x0000377c       0x20 /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/lib/libCMSISv2p10_DSPLIB_CM4.a(arm_sin_f32.o)
+ .debug_frame   0x0000018c      0x1c4 ./src/main.o
+ .debug_frame   0x00000350      0x420 ./src/midi.o
+ .debug_frame   0x00000770      0x1bc ./src/notelist.o
+ .debug_frame   0x0000092c      0x24c ./src/oscillator.o
+ .debug_frame   0x00000b78      0x980 ./src/pp6.o
+ .debug_frame   0x000014f8       0x70 ./src/pwm.o
+ .debug_frame   0x00001568       0x80 ./src/sad.o
+ .debug_frame   0x000015e8       0xb8 ./src/sadsr.o
+ .debug_frame   0x000016a0      0x324 ./src/sequencer.o
+ .debug_frame   0x000019c4       0x64 ./src/system_stm32f4xx.o
+ .debug_frame   0x00001a28       0x68 ./src/timer.o
+ .debug_frame   0x00001a90       0x88 ./src/uart.o
+ .debug_frame   0x00001b18       0x9c /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(misc.o)
+ .debug_frame   0x00001bb4      0x434 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_adc.o)
+ .debug_frame   0x00001fe8      0x19c /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_gpio.o)
+ .debug_frame   0x00002184      0x4d8 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rcc.o)
+ .debug_frame   0x0000265c       0xec /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_rng.o)
+ .debug_frame   0x00002748      0x2d0 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_spi.o)
+ .debug_frame   0x00002a18      0xa3c /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_tim.o)
+ .debug_frame   0x00003454      0x344 /home/owen/workspace-rs5/StdPeriphLib_v100_STM32F4xx/Debug/libStdPeriphLib_v100_STM32F4xx.a(stm32f4xx_usart.o)
+ .debug_frame   0x00003798       0x20 /home/owen/workspace-rs5/CMSISv2p10_DSPLIB_CM4/lib/libCMSISv2p10_DSPLIB_CM4.a(arm_sin_f32.o)
 
 .debug_pubnames
                 0x00000000       0x22

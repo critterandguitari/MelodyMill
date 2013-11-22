@@ -106,6 +106,11 @@ uint32_t aux_button_depress_time = 0;
 uint32_t oct_last = 0;
 uint32_t index_last = 0;
 
+// for CA rule 130 of mode 6
+uint8_t rows[2] = {0x08, 0};   // seed the CA with a 1 sorta in the middle
+uint8_t row_index = 0;
+uint8_t state = 0;
+
 
 static void Delay(__IO uint32_t nCount);
 static void flash_led_record_enable(void);
@@ -129,6 +134,7 @@ static void combine_keyboard_and_sequencer_notes(void);
 static void check_for_hold_release(void);
 static void update_note_list(void);
 static void tune_up(void);
+static uint8_t get_cell (uint8_t row, uint8_t num);
 
 int main(void)
 {
@@ -454,11 +460,29 @@ int main(void)
 					if (arp_tick ) { // got an arp tick
 
 						arp_tick = 0;
+
+						// tick the CA
+						/*row_index++;
+						row_index &= 1;
+
+						rows[row_index] = 0;  // zero out the row for new cells
+
+						// go thru the 8 cells
+						for(i=0; i<8; i++){
+							state = 0;
+							// calc state from prev row, (row_index + 1) & 1  since there are only 2
+							state = (get_cell(rows[(row_index + 1) & 1], i + 1) << 2) | (get_cell(rows[(row_index + 1) & 1], i) << 1) | (get_cell(rows[(row_index + 1) & 1], i - 1) << 0);
+							// put new cells in next row
+							rows[row_index] |= (((30 >> state) & 1) << i);
+						}*/
+
+
 						i = (uint32_t)(range * 6);
 						if (i)
 							oct = RNG_GetRandomNumber() % (uint32_t)(range * 6);
 						else
 							oct = 0;
+
 						// if more then 1 note held down, don't play same twince in a row
 						if (transformed.len > 1){
 							transformed.index = RNG_GetRandomNumber() % transformed.len;
@@ -560,6 +584,11 @@ int main(void)
 	    	}
 	    }
 	}
+}
+
+uint8_t get_cell (uint8_t row, uint8_t num){
+	num &= 0x7; // force to 8 cells
+	return (row & (1 << num)) >> num;
 }
 
 void tune_up(void){
